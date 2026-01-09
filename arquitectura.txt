@@ -1,0 +1,61 @@
+.
+├── arquitectura.txt
+├── backend
+│   ├── data
+│   │   └── db.json
+│   ├── modelos
+│   │   └── Articulo.js
+│   ├── notasacercacódigo.md
+│   ├── router
+│   │   └── index.js
+│   └── server
+│       ├── articulosRoutes.js
+│       ├── authController.js
+│       ├── authRoutes.js
+│       ├── contacto2.js
+│       ├── contacto.js
+│       ├── server.js
+│       └── uploads
+├── index.html
+├── package.json
+├── package-lock.json
+├── public
+│   └── icono.png
+├── README.md
+├── frontend
+│   ├── .env
+│   ├── .gitignore
+│   ├── api
+│   │   ├── articulos.js
+│   │   ├── authApi.js
+│   │   ├── clientes.js
+│   │   ├── noticias.js
+│   │   ├── provmuniApi.js
+│   │   └── taller.js
+│   ├── App.vue
+│   ├── assets
+│   │   ├── foto1.webp
+│   │   ├── foto2.webp
+│   │   ├── foto3.webp
+│   │   ├── homer-error.png
+│   │   └── logo.svg
+│   ├── components
+│   │   ├── AvisoLegal.vue
+│   │   ├── BusCar.vue
+│   │   ├── ChatWidget.vue
+│   │   ├── CitasTaller.vue
+│   │   ├── ConTacto.vue
+│   │   ├── FooTer.vue
+│   │   ├── GestionClientes.vue
+│   │   ├── ModeLos.vue
+│   │   ├── NavBar.vue
+│   │   ├── NotFound.vue
+│   │   ├── NotiCias.vue
+│   │   ├── PaginaInicio.vue
+│   │   ├── PoliticaPrivacidad.vue
+│   │   ├── TablaLogin.vue
+│   │   └── VenTas.vue
+│   └── main.js
+└── vite.config.js
+
+12 directories, 45 files
