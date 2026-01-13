@@ -4,8 +4,8 @@
       <i class="bi bi-newspaper"></i> Noticias
     </h4>
 
-    <!-- Formulario de creación / edición -->
-    <form @submit.prevent="guardarNoticia" class="mb-4">
+    <!-- Formulario de creación / edición (solo admin) -->
+    <form v-if="isAdmin" @submit.prevent="guardarNoticia" class="mb-4">
       <div class="card shadow-sm p-4 mb-5">
         <div class="mb-3">
           <label class="form-label fw-semibold">Título:</label>
@@ -54,6 +54,7 @@
             {{ formatearFecha(noticia.fecha_publicacion) }}
           </small>
           <button
+            v-if="isAdmin"
             @click.stop="editarNoticia(noticia.id)"
             class="btn btn-outline-primary btn-sm shadow-none rounded"
             title="Editar noticia"
@@ -62,6 +63,7 @@
             <i class="bi bi-pencil"></i>
           </button>
           <button
+            v-if="isAdmin"
             @click.stop="eliminarNoticia(noticia.id)"
             class="btn btn-outline-danger btn-sm shadow-none rounded"
             title="Eliminar noticia"
@@ -112,9 +114,11 @@
 import { ref, onMounted } from "vue";
 import Swal from "sweetalert2";
 import { getNoticias, addNoticia, deleteNoticia, updateNoticia } from "@/api/noticias.js";
+import { checkAdmin } from '@/api/authApi.js';
 
 const noticias = ref([]);
 const expandidas = ref(new Set());
+const isAdmin = ref(false);
 
 const editando = ref(false);
 const noticiaEditandoId = ref(null);
@@ -128,6 +132,8 @@ const nuevaNoticia = ref({
 const noticiaVacia = { titulo: "", contenido: "", fecha_publicacion: "" };
 
 onMounted(async () => {
+  const adminRes = await checkAdmin();
+  isAdmin.value = adminRes.isAdmin;
   await cargarNoticias();
 });
 
@@ -160,6 +166,10 @@ const truncarTexto = (texto, maxCaracteres) => {
 };
 
 const guardarNoticia = async () => {
+  if (!isAdmin.value) {
+    Swal.fire({ icon: 'error', title: 'No autorizado', text: 'Solo administradores pueden publicar noticias.', timer: 1500, showConfirmButton: false });
+    return;
+  }
   const result = await Swal.fire({
     title: editando.value ? "¿Desea modificar esta noticia?" : "¿Desea grabar esta noticia?",
     icon: "warning",

@@ -12,6 +12,7 @@ import { fileURLToPath } from "url";
 import articulosRoutes from "./articulosRoutes.js"; // ruta al router backend
 import authRouter from "./authRouter.js"; // ruta al router backend
 import chatRoutes from "./chatRoutes.js";
+import clientesRoutes from "./clientesRoutes.js";
 
 dotenv.config();
 const app = express();
@@ -41,14 +42,19 @@ app.use(express.json());
 app.use("/api/articulos", articulosRoutes);
 app.use("/api/auth", authRouter);
 app.use("/api/chat", chatRoutes);
+app.use("/api/clientes", clientesRoutes);
 
 // Verificar variable
 //console.log("MONGODB_URI =", process.env.MONGODB_URI);
 
-/// Conexión a MongoDB 
-mongoose.connect(process.env.MONGODB_URI)
-    .then(() => console.log("Connected to MongoDB a la base de datos BBDD"))
-    .catch((err) => console.error("Could not connect to MongoDB:", err));
+/// Conexión a MongoDB (solo si se proporciona MONGODB_URI)
+if (process.env.MONGODB_URI) {
+    mongoose.connect(process.env.MONGODB_URI)
+        .then(() => console.log("Connected to MongoDB a la base de datos BBDD"))
+        .catch((err) => console.error("Could not connect to MongoDB:", err));
+} else {
+    console.log("MONGODB_URI no definido — saltando conexión a MongoDB (modo desarrollo)");
+}
 
 
 

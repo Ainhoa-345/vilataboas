@@ -163,6 +163,30 @@
             class="form-control flex-grow-1 text-center ms-4"
             :class="{ 'is-invalid': !movilValido }"
           />
+          <button
+            type="button"
+            class="btn btn-outline-primary ms-2"
+            @click="buscarClientePorMovil(nuevoCliente.movil)"
+            title="Buscar por móvil"
+          >
+            <i class="bi bi-search"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Contraseña -->
+      <div class="mb-3 row g-3 align-items-center">
+        <div class="col-md-5 d-flex align-items-center">
+          <label for="password" class="form-label mb-0 text-nowrap w-25">Contraseña:</label>
+          <input
+            type="password"
+            id="password"
+            v-model="nuevoCliente.password"
+            :required="!editando"
+            minlength="6"
+            class="form-control flex-grow-1"
+            placeholder="Mínimo 6 caracteres"
+          />
         </div>
       </div>
 
@@ -252,7 +276,8 @@
 
           <!-- Histórico (derecha) -->
           <div class="ms-auto me-5">
-            <div class="form-switch d-flex align-items-center">
+            <!-- Histórico solo visible para admin -->
+            <div v-if="isAdmin" class="form-switch d-flex align-items-center">
               <input
                 type="checkbox"
                 id="historico"
@@ -276,10 +301,11 @@
         >
           {{ editando ? "Modificar Cliente" : "Guardar" }}
         </button>
+        <button type="button" class="btn btn-secondary ms-3" @click="refrescarPagina">Limpiar</button>
       </div>
     </form>
-    <!-- Lista de Clientes -->
-    <div class="table-responsive">
+  <!-- Lista de Clientes (solo admin) -->
+  <div v-if="isAdmin" class="table-responsive">
       <h4 class="text-center w-100">Listado Clientes</h4>
       <table class="table table-bordered table-striped w-100 align-middle">
         <thead class="table-primary">
@@ -349,11 +375,15 @@
         </button>
       </div>
     </div>
+    <div v-else class="alert alert-secondary text-center">
+      A área de xestión de clientes só está dispoñible para administradores.
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, computed } from "vue";
+// bcrypt removed from frontend; hashing will be done server-side
 import provmuniData from "@/data/provmuni.json";
 import Swal from "sweetalert2";
 import {
@@ -363,6 +393,7 @@ import {
   updateCliente,
   getClientePorDni,
 } from "@/api/clientes.js";
+import { checkAdmin } from '@/api/authApi.js';
 
 /* =================================== SCRIPT CRUD =================================== */
 
@@ -379,9 +410,15 @@ const clienteVacio = {
   historico: true,
   tipoCliente: "",
   lopd: false,
+  password: "",
 };
 
 const nuevoCliente = ref({ ...clienteVacio });
+
+const isAdmin = ref(false);
+
+// Guardar la contraseña original cuando entramos en modo edición
+const clienteOriginalPassword = ref("");
 
 const editando = ref(false);
 const mostrarHistorico = ref(false);
@@ -397,6 +434,9 @@ const clientes = ref([]);
 
 // Zona Cargar clientes Al Montar el componente
 onMounted(async () => {
+  // comprobar permisos de admin para mostrar/ocultar la tabla y controles
+  const adminRes = await checkAdmin();
+  isAdmin.value = adminRes.isAdmin;
   cargarClientes();
 });
 
@@ -416,6 +456,12 @@ const cargarClientes = () => {
 
 const guardarCliente = async () => {
 
+  // Normalizar/capitalizar campos clave
+  nuevoCliente.value.dni = (nuevoCliente.value.dni || '').toString().trim().toUpperCase();
+  capitalizarTexto('nombre');
+  capitalizarTexto('apellidos');
+  capitalizarTexto('direccion');
+
   validarDni();
   validarEmail();
   validarMovil();
@@ -434,13 +480,32 @@ const guardarCliente = async () => {
     const duplicado = clientes.value.find(
       (cliente) =>
         cliente.dni === nuevoCliente.value.dni ||
-        cliente.movil === nuevoCliente.value.movil ||
-        cliente.email === nuevoCliente.value.email
+        (cliente.movil && cliente.movil === nuevoCliente.value.movil) ||
+        (cliente.email && cliente.email === nuevoCliente.value.email)
     );
     if (duplicado) {
       Swal.fire({
         icon: "error",
         title: "DNI, móvil o email duplicados",
+        showConfirmButton: false,
+        timer: 2000,
+      });
+      return;
+    }
+  } else {
+    // En edición, evitar duplicados contra otros registros (excluir el propio id)
+    const dup = clientes.value.find(
+      (cliente) =>
+        cliente.id !== clienteEditandoId.value && (
+          cliente.dni === nuevoCliente.value.dni ||
+          (cliente.movil && cliente.movil === nuevoCliente.value.movil) ||
+          (cliente.email && cliente.email === nuevoCliente.value.email)
+        )
+    );
+    if (dup) {
+      Swal.fire({
+        icon: 'error',
+        title: 'DNI, móvil o email duplicados en otro registro',
         showConfirmButton: false,
         timer: 2000,
       });
@@ -462,13 +527,18 @@ const guardarCliente = async () => {
   if (!result.isConfirmed) return;
   //clienteActualizado.fecha_alta = formatearFechaParaInput(clienteActualizado.fecha_alta);
   try {
+    // preparar payload y gestionar hashing de la contraseña
+    const payload = { ...nuevoCliente.value };
+
     if (editando.value) {
-      // Validar campos
-      // Modificar cliente (PUT)+
+      // Si el campo contraseña está vacío -> conservar la contraseña original
+      if (!payload.password || payload.password.trim() === "") {
+        payload.password = clienteOriginalPassword.value || "";
+      }
 
       const clienteActualizado = await updateCliente(
         clienteEditandoId.value,
-        nuevoCliente.value
+        payload
       );
 
       // Actualiza el cliente en la lista local
@@ -484,8 +554,20 @@ const guardarCliente = async () => {
       });
     } else {
       // Agregar cliente (POST)
+      // Contraseña obligatoria en creación
+      if (!payload.password || payload.password.trim() === "") {
+        Swal.fire({
+          icon: "error",
+          title: "La contraseña es obligatoria para el registro",
+          showConfirmButton: true,
+        });
+        return;
+      }
 
-      const clienteAgregado = await addCliente(nuevoCliente.value);
+      // En creación enviamos la contraseña en claro; el servidor se encargará
+      // de hashearla antes de persistirla.
+
+      const clienteAgregado = await addCliente(payload);
       clientes.value.push(clienteAgregado);
       Swal.fire({
         icon: "success",
@@ -495,8 +577,9 @@ const guardarCliente = async () => {
       });
     }
 
-  // Reset formulario y estado
-  nuevoCliente.value = { ...clienteVacio };
+    // Reset formulario y estado
+    nuevoCliente.value = { ...clienteVacio };
+    clienteOriginalPassword.value = "";
 
     editando.value = false;
     clienteEditandoId.value = null;
@@ -580,6 +663,9 @@ const editarCliente = (movil) => {
 
   // Copiar datos al formulario
   nuevoCliente.value = { ...cliente }; // 🔁 Aquí cargas el formulario con los datos
+  // No rellenar el input de contraseña con el hash (evitar mostrar hash en la UI)
+  clienteOriginalPassword.value = cliente.password || "";
+  nuevoCliente.value.password = "";
   editando.value = true;
   // Formatear fecha para el input type="date"
   nuevoCliente.value.fecha_alta = formatearFechaParaInput(cliente.fecha_alta);
@@ -660,7 +746,10 @@ const buscarClientePorDNI = async (dni) => {
     }
 
     // ✅ Cargar los datos en el formulario
-    nuevoCliente.value = { ...cliente };
+  nuevoCliente.value = { ...cliente };
+  // No mostrar el hash en el formulario
+  clienteOriginalPassword.value = cliente.password || "";
+  nuevoCliente.value.password = "";
     nuevoCliente.value.fecha_alta = formatearFechaParaInput(cliente.fecha_alta);
 
     // Actualiza lista de municipios si cambia la provincia
@@ -685,6 +774,49 @@ const buscarClientePorDNI = async (dni) => {
       timer: 2000,
       showConfirmButton: false,
     });
+  }
+};
+
+const buscarClientePorMovil = async (movil) => {
+  if (!movil || movil.trim() === "") {
+    Swal.fire({
+      icon: "warning",
+      title: "Debe introducir un móvil antes de buscar.",
+      timer: 1500,
+      showConfirmButton: false,
+    });
+    return;
+  }
+
+  try {
+    const all = await getClientes(true); // traer todos para buscar
+    const cliente = all.find((c) => c.movil === movil.trim());
+
+    if (!cliente) {
+      Swal.fire({
+        icon: "info",
+        title: "Cliente no encontrado",
+        text: "No existe ningún cliente con ese móvil.",
+        timer: 1500,
+        showConfirmButton: false,
+      });
+      return;
+    }
+
+  nuevoCliente.value = { ...cliente };
+  // No mostrar hash en el formulario
+  clienteOriginalPassword.value = cliente.password || "";
+  nuevoCliente.value.password = "";
+    nuevoCliente.value.fecha_alta = formatearFechaParaInput(cliente.fecha_alta);
+    filtrarMunicipios();
+    nuevoCliente.value.municipio = cliente.municipio;
+    editando.value = true;
+    clienteEditandoId.value = cliente.id;
+
+    Swal.fire({ icon: 'success', title: 'Cliente encontrado y cargado', timer: 1200, showConfirmButton: false });
+  } catch (error) {
+    console.error('Error buscando cliente por móvil:', error);
+    Swal.fire({ icon: 'error', title: 'Error al buscar por móvil', timer: 1500, showConfirmButton: false });
   }
 };
 
@@ -716,7 +848,9 @@ const validarDniNie = (valor) => {
 
 // Validar al salir del campo
 const validarDni = () => {
-  const dni = nuevoCliente.value.dni.trim().toUpperCase();
+  const dni = (nuevoCliente.value.dni || '').toString().trim().toUpperCase();
+  // Escribir de nuevo en el modelo para normalizar
+  nuevoCliente.value.dni = dni;
   dniValido.value = validarDniNie(dni);
 };
 

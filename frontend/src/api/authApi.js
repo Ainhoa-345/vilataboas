@@ -21,6 +21,11 @@ export const loginUsuario = async (dni, password) => {
 export const checkAdmin = async () => {
   try {
     const token = sessionStorage.getItem('token');
+    // DEV shortcut: if running locally you can set sessionStorage token = 'dev-admin'
+    // to be treated as admin without a backend check. This is for local development only.
+    if (token === 'dev-admin') {
+      return { isAdmin: true, name: 'Admin (dev)' };
+    }
     if (!token) return { isAdmin: false, name: '' };
 
     const response = await axios.get("http://localhost:5000/api/auth/check-admin", {

@@ -579,21 +579,37 @@
       "tipo": "user"
     },
     {
-      "id": "183f",
-      "dni": "00000000T",
-      "nombre": "Víctor",
-      "apellidos": "Sánchez Nogueira",
-      "email": "victorsancheznog123123123ueira@gmail.com",
-      "movil": "654654333",
-      "direccion": "Rúa Da Laxe, 10",
+      "id": "45da",
+      "dni": "54381069F",
+      "nombre": "Ainhoa",
+      "apellidos": "Vila",
+      "email": "ainhoa@gmail.com",
+      "movil": "698138059",
+      "direccion": "Calle Fernández 95",
       "provincia": "Pontevedra",
-      "municipio": "Barro",
-      "fecha_alta": "",
-      "tipo_cliente": "",
+      "municipio": "Vigo",
+      "fecha_alta": "2026-01-13",
+      "historico": true,
+      "tipoCliente": "",
+      "lopd": true,
+      "password": "$2a$10$isInp.0VibiAME8U2oOaEOat0IgW1sH/P65C7MTszegrukkXVrMLq",
+      "tipo": "admin"
+    },
+    {
+      "id": "a7fd",
+      "dni": "TEST12345A",
+      "nombre": "Test",
+      "apellidos": "User",
+      "email": "test.user@example.com",
+      "movil": "600000000",
+      "direccion": "Calle Test 1",
+      "provincia": "Madrid",
+      "municipio": "Madrid",
+      "fecha_alta": "2026-01-13",
+      "tipoCliente": "particular",
       "historico": false,
       "lopd": true,
-      "password": "$2a$10$9YkrI9qN1WuNrzrPHfR.yOm7yagAKBI8YwfMKdM04fs9pmoLmP2IW",
-      "tipo": "admin"
+      "password": "$2a$10$gszpAl/Aa4u2B0y0zwiX4.QsNPkDDyqK3cSDHRDkfswkZbLdCCOSK"
     }
   ],
   "noticias": [
@@ -731,10 +747,20 @@
       "puertas": 5,
       "potencia_cv": 115,
       "descripcion": "Volkswagen Golf 2020 con bajo consumo y mantenimiento reciente. ITV pasada.",
-      "ubicacion": { "ciudad": "Vigo", "provincia": "Pontevedra" },
-      "contacto": { "nombre": "María López", "telefono": "+34 698 112 903", "email": "maria.lopez@example.com" },
-      "fecha_publicacion": { "$date": "2025-11-03T00:00:00.000Z" },
-      "estado": "disponible"
+      "ubicacion": {
+        "ciudad": "Vigo",
+        "provincia": "Pontevedra"
+      },
+      "contacto": {
+        "nombre": "María López",
+        "telefono": "+34 698 112 903",
+        "email": "maria.lopez@example.com"
+      },
+      "fecha_publicacion": {
+        "$date": "2025-11-03T00:00:00.000Z"
+      },
+      "estado": "disponible",
+      "id": "f7dd"
     },
     {
       "tipo": "coche",
@@ -749,10 +775,20 @@
       "puertas": 5,
       "potencia_cv": 100,
       "descripcion": "Peugeot 208 automático en excelente estado interior, ideal para ciudad.",
-      "ubicacion": { "ciudad": "A Coruña", "provincia": "A Coruña" },
-      "contacto": { "nombre": "Carlos Fernández", "telefono": "+34 611 223 345", "email": "carlos.fernandez@example.com" },
-      "fecha_publicacion": { "$date": "2025-10-28T00:00:00.000Z" },
-      "estado": "disponible"
+      "ubicacion": {
+        "ciudad": "A Coruña",
+        "provincia": "A Coruña"
+      },
+      "contacto": {
+        "nombre": "Carlos Fernández",
+        "telefono": "+34 611 223 345",
+        "email": "carlos.fernandez@example.com"
+      },
+      "fecha_publicacion": {
+        "$date": "2025-10-28T00:00:00.000Z"
+      },
+      "estado": "disponible",
+      "id": "37bd"
     },
     {
       "tipo": "coche",
@@ -767,10 +803,20 @@
       "puertas": 4,
       "potencia_cv": 283,
       "descripcion": "Tesla Model 3 Long Range con Autopilot y mantenimiento oficial.",
-      "ubicacion": { "ciudad": "Ourense", "provincia": "Ourense" },
-      "contacto": { "nombre": "Laura González", "telefono": "+34 600 889 451", "email": "laura.gonzalez@example.com" },
-      "fecha_publicacion": { "$date": "2025-10-20T00:00:00.000Z" },
-      "estado": "reservado"
+      "ubicacion": {
+        "ciudad": "Ourense",
+        "provincia": "Ourense"
+      },
+      "contacto": {
+        "nombre": "Laura González",
+        "telefono": "+34 600 889 451",
+        "email": "laura.gonzalez@example.com"
+      },
+      "fecha_publicacion": {
+        "$date": "2025-10-20T00:00:00.000Z"
+      },
+      "estado": "reservado",
+      "id": "aa88"
     },
     {
       "tipo": "coche",
@@ -785,10 +831,20 @@
       "puertas": 5,
       "potencia_cv": 105,
       "descripcion": "Seat León 1.6 TDI, cadena de distribución cambiada, muy cuidado.",
-      "ubicacion": { "ciudad": "Lugo", "provincia": "Lugo" },
-      "contacto": { "nombre": "Andrés Castro", "telefono": "+34 622 774 982", "email": "andres.castro@example.com" },
-      "fecha_publicacion": { "$date": "2025-09-15T00:00:00.000Z" },
-      "estado": "vendido"
+      "ubicacion": {
+        "ciudad": "Lugo",
+        "provincia": "Lugo"
+      },
+      "contacto": {
+        "nombre": "Andrés Castro",
+        "telefono": "+34 622 774 982",
+        "email": "andres.castro@example.com"
+      },
+      "fecha_publicacion": {
+        "$date": "2025-09-15T00:00:00.000Z"
+      },
+      "estado": "vendido",
+      "id": "5c6a"
     },
     {
       "tipo": "coche",
@@ -803,15 +859,27 @@
       "puertas": 5,
       "potencia_cv": 90,
       "descripcion": "Renault Clio 1.2, consumo muy bajo, revisado y sin accidentes.",
-      "ubicacion": { "ciudad": "Ferrol", "provincia": "A Coruña" },
-      "contacto": { "nombre": "Beatriz Méndez", "telefono": "+34 690 440 871", "email": "beatriz.mendez@example.com" },
-      "fecha_publicacion": { "$date": "2025-08-10T00:00:00.000Z" },
-      "estado": "disponible"
+      "ubicacion": {
+        "ciudad": "Ferrol",
+        "provincia": "A Coruña"
+      },
+      "contacto": {
+        "nombre": "Beatriz Méndez",
+        "telefono": "+34 690 440 871",
+        "email": "beatriz.mendez@example.com"
+      },
+      "fecha_publicacion": {
+        "$date": "2025-08-10T00:00:00.000Z"
+      },
+      "estado": "disponible",
+      "id": "0f45"
     }
   ],
   "articulos": [
     {
-      "_id": { "$oid": "6909b9faf474abc658dc6e54" },
+      "_id": {
+        "$oid": "6909b9faf474abc658dc6e54"
+      },
       "tipo": "coche",
       "marca": "Toyota",
       "modelo": "Corolla",
@@ -822,14 +890,26 @@
       "transmision": "manual",
       "potencia_cv": 122,
       "descripcion": "Toyota Corolla 2019 en muy buen estado, único propietario, revisiones al día.",
-      "ubicacion": { "ciudad": "Santiago de Compostela", "provincia": "A Coruña" },
-      "contacto": { "nombre": "Juan Pérez", "telefono": "+34 612 345 678", "email": "juan.perez@example.com" },
-      "fecha_publicacion": { "$date": "2025-11-04T00:00:00.000Z" },
+      "ubicacion": {
+        "ciudad": "Santiago de Compostela",
+        "provincia": "A Coruña"
+      },
+      "contacto": {
+        "nombre": "Juan Pérez",
+        "telefono": "+34 612 345 678",
+        "email": "juan.perez@example.com"
+      },
+      "fecha_publicacion": {
+        "$date": "2025-11-04T00:00:00.000Z"
+      },
       "estado": "disponible",
-      "matricula": "ABC1213"
+      "matricula": "ABC1213",
+      "id": "9c75"
     },
     {
-      "_id": { "$oid": "690b1a9f7e347ebd181254a7" },
+      "_id": {
+        "$oid": "690b1a9f7e347ebd181254a7"
+      },
       "tipo": "coche",
       "marca": "Volkswagen",
       "modelo": "Golf",
@@ -840,14 +920,26 @@
       "transmision": "manual",
       "potencia_cv": 115,
       "descripcion": "Volkswagen Golf 2020 con bajo consumo y mantenimiento reciente. ITV pasada.",
-      "ubicacion": { "ciudad": "Vigo", "provincia": "Pontevedra" },
-      "contacto": { "nombre": "María López", "telefono": "+34 698 112 903", "email": "maria.lopez@example.com" },
-      "fecha_publicacion": { "$date": "2025-11-03T00:00:00.000Z" },
+      "ubicacion": {
+        "ciudad": "Vigo",
+        "provincia": "Pontevedra"
+      },
+      "contacto": {
+        "nombre": "María López",
+        "telefono": "+34 698 112 903",
+        "email": "maria.lopez@example.com"
+      },
+      "fecha_publicacion": {
+        "$date": "2025-11-03T00:00:00.000Z"
+      },
       "estado": "disponible",
-      "matricula": "BBD1245"
+      "matricula": "BBD1245",
+      "id": "6834"
     },
     {
-      "_id": { "$oid": "690b1a9f7e347ebd181254a8" },
+      "_id": {
+        "$oid": "690b1a9f7e347ebd181254a8"
+      },
       "tipo": "coche",
       "marca": "Peugeot",
       "modelo": "208",
@@ -858,14 +950,26 @@
       "transmision": "automático",
       "potencia_cv": 100,
       "descripcion": "Peugeot 208 automático en excelente estado interior, ideal para ciudad.",
-      "ubicacion": { "ciudad": "A Coruña", "provincia": "A Coruña" },
-      "contacto": { "nombre": "Carlos Fernández", "telefono": "+34 611 223 345", "email": "carlos.fernandez@example.com" },
-      "fecha_publicacion": { "$date": "2025-10-28T00:00:00.000Z" },
+      "ubicacion": {
+        "ciudad": "A Coruña",
+        "provincia": "A Coruña"
+      },
+      "contacto": {
+        "nombre": "Carlos Fernández",
+        "telefono": "+34 611 223 345",
+        "email": "carlos.fernandez@example.com"
+      },
+      "fecha_publicacion": {
+        "$date": "2025-10-28T00:00:00.000Z"
+      },
       "estado": "disponible",
-      "matricula": "CAD4567"
+      "matricula": "CAD4567",
+      "id": "c077"
     },
     {
-      "_id": { "$oid": "690b1a9f7e347ebd181254a9" },
+      "_id": {
+        "$oid": "690b1a9f7e347ebd181254a9"
+      },
       "tipo": "coche",
       "marca": "Tesla",
       "modelo": "Model 3",
@@ -876,14 +980,26 @@
       "transmision": "automático",
       "potencia_cv": 283,
       "descripcion": "Tesla Model 3 Long Range con Autopilot y mantenimiento oficial.",
-      "ubicacion": { "ciudad": "Ourense", "provincia": "Ourense" },
-      "contacto": { "nombre": "Laura González", "telefono": "+34 600 889 451", "email": "laura.gonzalez@example.com" },
-      "fecha_publicacion": { "$date": "2025-10-20T00:00:00.000Z" },
+      "ubicacion": {
+        "ciudad": "Ourense",
+        "provincia": "Ourense"
+      },
+      "contacto": {
+        "nombre": "Laura González",
+        "telefono": "+34 600 889 451",
+        "email": "laura.gonzalez@example.com"
+      },
+      "fecha_publicacion": {
+        "$date": "2025-10-20T00:00:00.000Z"
+      },
       "estado": "reservado",
-      "matricula": "ABF5467"
+      "matricula": "ABF5467",
+      "id": "d460"
     },
     {
-      "_id": { "$oid": "690b1a9f7e347ebd181254aa" },
+      "_id": {
+        "$oid": "690b1a9f7e347ebd181254aa"
+      },
       "tipo": "coche",
       "marca": "Seat",
       "modelo": "León",
@@ -896,13 +1012,25 @@
       "puertas": 5,
       "potencia_cv": 105,
       "descripcion": "Seat León 1.6 TDI, cadena de distribución cambiada, muy cuidado.",
-      "ubicacion": { "ciudad": "Lugo", "provincia": "Lugo" },
-      "contacto": { "nombre": "Andrés Castro", "telefono": "+34 622 774 982", "email": "andres.castro@example.com" },
-      "fecha_publicacion": { "$date": "2025-09-15T00:00:00.000Z" },
-      "estado": "vendido"
+      "ubicacion": {
+        "ciudad": "Lugo",
+        "provincia": "Lugo"
+      },
+      "contacto": {
+        "nombre": "Andrés Castro",
+        "telefono": "+34 622 774 982",
+        "email": "andres.castro@example.com"
+      },
+      "fecha_publicacion": {
+        "$date": "2025-09-15T00:00:00.000Z"
+      },
+      "estado": "vendido",
+      "id": "8fa4"
     },
     {
-      "_id": { "$oid": "690b1a9f7e347ebd181254ab" },
+      "_id": {
+        "$oid": "690b1a9f7e347ebd181254ab"
+      },
       "tipo": "coche",
       "marca": "Renault",
       "modelo": "Clio",
@@ -913,10 +1041,20 @@
       "transmision": "manual",
       "potencia_cv": 90,
       "descripcion": "Renault Clio 1.2, consumo muy bajo, revisado y sin accidentes.",
-      "ubicacion": { "ciudad": "Ferrol", "provincia": "A Coruña" },
-      "contacto": { "nombre": "Beatriz Méndez", "telefono": "+34 690 440 871", "email": "beatriz.mendez@example.com" },
-      "fecha_publicacion": { "$date": "2025-08-10T00:00:00.000Z" },
-      "estado": "disponible"
+      "ubicacion": {
+        "ciudad": "Ferrol",
+        "provincia": "A Coruña"
+      },
+      "contacto": {
+        "nombre": "Beatriz Méndez",
+        "telefono": "+34 690 440 871",
+        "email": "beatriz.mendez@example.com"
+      },
+      "fecha_publicacion": {
+        "$date": "2025-08-10T00:00:00.000Z"
+      },
+      "estado": "disponible",
+      "id": "a3a8"
     }
   ]
 }
