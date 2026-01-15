@@ -596,20 +596,20 @@
       "tipo": "admin"
     },
     {
-      "id": "a7fd",
-      "dni": "TEST12345A",
-      "nombre": "Test",
-      "apellidos": "User",
-      "email": "test.user@example.com",
+      "id": "4dad",
+      "dni": "AUTOTEST735025",
+      "nombre": "Auto",
+      "apellidos": "Tester",
+      "email": "auto.AUTOTEST735025@example.com",
       "movil": "600000000",
       "direccion": "Calle Test 1",
-      "provincia": "Madrid",
-      "municipio": "Madrid",
-      "fecha_alta": "2026-01-13",
+      "provincia": "Test",
+      "municipio": "Test",
+      "fecha_alta": "2026-01-15",
       "tipoCliente": "particular",
       "historico": false,
       "lopd": true,
-      "password": "$2a$10$gszpAl/Aa4u2B0y0zwiX4.QsNPkDDyqK3cSDHRDkfswkZbLdCCOSK"
+      "password": "$2a$10$hwizjyLwGKgsUnXi6xgDG.VTLcZPv2uMgJMcYThDJ.NwQGP3jJwbC"
     }
   ],
   "noticias": [
