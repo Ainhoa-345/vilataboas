@@ -35,9 +35,9 @@ onMounted(async () => {
 });
 
 const urlImagen = (ruta) => {
-    
-    if (!ruta) return "/no-image.png";    
-    return `http://localhost:5000${ruta}`
+    if (!ruta) return "/no-image.png";
+    // Las imágenes de los artículos están servidas por json-server en el puerto 3000 en dev
+    return `http://localhost:3000${ruta}`;
 };
 
 const getEstadoClass = (estado) => {

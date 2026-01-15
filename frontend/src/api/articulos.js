@@ -1,6 +1,9 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:5000/api/articulos";
+// En entorno de desarrollo sin MongoDB el backend de artículos no está disponible
+// y usamos json-server (puerto 3000). Si despliegas con MongoDB/Express, cambia a 5000.
+const API_URL = "http://localhost:3000";
+
 
 // Obtener todos los artículos
 export async function getArticulos() {

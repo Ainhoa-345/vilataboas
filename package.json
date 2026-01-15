@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "json-server": "json-server --watch ./backend/data/db.json --port 3000",
     "server": "node ./backend/server/server.js",
-    "start": "concurrently \"npm run json-server\" \"npm --prefix frontend run dev\""
+  "start": "concurrently \"npm run json-server\" \"npm run server\" \"npm --prefix frontend run dev\"",
+  "dev:all": "concurrently \"npm run json-server\" \"npm run server\" \"npm --prefix frontend run dev\""
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^7.0.1",
