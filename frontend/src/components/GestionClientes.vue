@@ -47,27 +47,12 @@
           <label for="tipoCliente" class="form-label me-4 ms-5 mb-0 text-nowrap"
             >Tipo Cliente:</label
           >
-          <input
-            type="radio"
-            name="tipoCliente"
-            id="tipoCliente"
-            value="particular"
-            class="me-1"
-            v-model="nuevoCliente.tipoCliente"
-            checked
-            required
-          />
-          <label class="me-4">Particular</label>
-          <input
-            type="radio"
-            name="tipoCliente"
-            id="tipoCliente"
-            value="empresa"
-            class="me-1"
-            v-model="nuevoCliente.tipoCliente"
-            required
-          />
-          <label>Empresa</label>
+          <input type="radio" name="tipoCliente" id="tipoClienteParticular" value="particular">
+          <label for="tipoClienteParticular">Particular</label>
+
+          <input type="radio" name="tipoCliente" id="tipoClienteEmpresa" value="empresa">
+          <label for="tipoClienteEmpresa">Empresa</label>
+
         </div>
 
         <!-- Columna Fecha de Alta a la derecha -->
@@ -383,20 +368,20 @@
 
 <script setup>
 import { ref, onMounted, computed } from "vue";
-// bcrypt removed from frontend; hashing will be done server-side
-import provmuniData from "@/data/provmuni.json";
 import Swal from "sweetalert2";
+import provmuniData from "@/data/provmuni.json";
+
 import {
   getClientes,
-  deleteCliente,
   addCliente,
   updateCliente,
-  getClientePorDni,
+  deleteCliente,
+  getClientePorDni
 } from "@/api/clientes.js";
-import { checkAdmin } from '@/api/authApi.js';
 
-/* =================================== SCRIPT CRUD =================================== */
+import { checkAdmin } from "@/api/authApi.js";
 
+/* ===================== ESTADO BASE ===================== */
 const clienteVacio = {
   dni: "",
   nombre: "",
@@ -408,7 +393,7 @@ const clienteVacio = {
   municipio: "",
   fecha_alta: "",
   historico: true,
-  tipoCliente: "",
+  tipoCliente: "particular",
   lopd: false,
   password: "",
 };
@@ -416,566 +401,212 @@ const clienteVacio = {
 const nuevoCliente = ref({ ...clienteVacio });
 
 const isAdmin = ref(false);
-
-// Guardar la contraseña original cuando entramos en modo edición
+const editando = ref(false);
+const clienteEditandoId = ref(null);
 const clienteOriginalPassword = ref("");
 
-const editando = ref(false);
-const mostrarHistorico = ref(false);
-const clienteEditandoId = ref(null);
+const mostrarHistorico = ref(false); // muestra clientes activos por defecto
 
+
+/* ===================== LISTADO ===================== */
+const clientes = ref([]);
 const numClientes = ref(0);
 const currentPage = ref(1);
 const clientesPorPage = 10;
 
-// Función Listar Clientes con get
+/* ===================== VALIDACIONES ===================== */
+const dniValido = ref(true);
+const emailValido = ref(true);
+const movilValido = ref(true);
 
-const clientes = ref([]);
+/* ===================== PROVINCIAS / MUNICIPIOS ===================== */
+const provincias = ref(provmuniData.provincias);
+const municipios = ref(provmuniData.municipios);
+const municipiosFiltrados = ref([]);
 
-// Zona Cargar clientes Al Montar el componente
+/* ===================== CICLO DE VIDA ===================== */
 onMounted(async () => {
-  // comprobar permisos de admin para mostrar/ocultar la tabla y controles
-  const adminRes = await checkAdmin();
-  isAdmin.value = adminRes.isAdmin;
-  cargarClientes();
+  try {
+    // 🔐 CONTROL DE ADMIN
+    isAdmin.value = checkAdmin(); // Devuelve true solo si user.tipo === "admin"
+
+    if (isAdmin.value) {
+      await cargarClientes();
+    }
+  } catch (error) {
+    console.error("Error comprobando permisos de admin:", error);
+    isAdmin.value = false;
+  }
 });
 
-const cargarClientes = () => {
-  getClientes(mostrarHistorico.value).then((data) => {
+/* ===================== CRUD ===================== */
+const cargarClientes = async () => {
+  try {
+    const data = await getClientes(); // ignorando el parámetro
+    console.log("Clientes recibidos:", data);
     clientes.value = data;
     numClientes.value = data.length;
     currentPage.value = 1;
-  });
-  Swal.fire({
-    icon: "success",
-    title: "Listando Clientes...",
-    showConfirmButton: false,
-    timer: 1500,  
-  });
+  } catch (error) {
+    console.error("Error cargando clientes:", error);
+  }
 };
+
 
 const guardarCliente = async () => {
-
-  // Normalizar/capitalizar campos clave
-  nuevoCliente.value.dni = (nuevoCliente.value.dni || '').toString().trim().toUpperCase();
-  capitalizarTexto('nombre');
-  capitalizarTexto('apellidos');
-  capitalizarTexto('direccion');
-
-  validarDni();
-  validarEmail();
-  validarMovil();
+  normalizarCliente();
 
   if (!dniValido.value || !emailValido.value || !movilValido.value) {
-    Swal.fire({
-      icon: "error",
-      title: "Hay campos inválidos",
-      text: "Corrija DNI, móvil o email antes de guardar",
-      showConfirmButton: true,
-    });
-    return; // Salir de la función si hay errores
-  }
-
-  if (!editando.value) {
-    const duplicado = clientes.value.find(
-      (cliente) =>
-        cliente.dni === nuevoCliente.value.dni ||
-        (cliente.movil && cliente.movil === nuevoCliente.value.movil) ||
-        (cliente.email && cliente.email === nuevoCliente.value.email)
-    );
-    if (duplicado) {
-      Swal.fire({
-        icon: "error",
-        title: "DNI, móvil o email duplicados",
-        showConfirmButton: false,
-        timer: 2000,
-      });
-      return;
-    }
-  } else {
-    // En edición, evitar duplicados contra otros registros (excluir el propio id)
-    const dup = clientes.value.find(
-      (cliente) =>
-        cliente.id !== clienteEditandoId.value && (
-          cliente.dni === nuevoCliente.value.dni ||
-          (cliente.movil && cliente.movil === nuevoCliente.value.movil) ||
-          (cliente.email && cliente.email === nuevoCliente.value.email)
-        )
-    );
-    if (dup) {
-      Swal.fire({
-        icon: 'error',
-        title: 'DNI, móvil o email duplicados en otro registro',
-        showConfirmButton: false,
-        timer: 2000,
-      });
-      return;
-    }
-  }
-
-  // Confirmación antes de guardar
-  const result = await Swal.fire({
-    title: editando.value
-      ? "¿Desea modificar este cliente?"
-      : "¿Desea grabar este cliente?",
-    icon: "warning",
-    showCancelButton: true,
-    confirmButtonText: editando.value ? "Modificar" : "Grabar",
-    cancelButtonText: "Cancelar",
-  });
-
-  if (!result.isConfirmed) return;
-  //clienteActualizado.fecha_alta = formatearFechaParaInput(clienteActualizado.fecha_alta);
-  try {
-    // preparar payload y gestionar hashing de la contraseña
-    const payload = { ...nuevoCliente.value };
-
-    if (editando.value) {
-      // Si el campo contraseña está vacío -> conservar la contraseña original
-      if (!payload.password || payload.password.trim() === "") {
-        payload.password = clienteOriginalPassword.value || "";
-      }
-
-      const clienteActualizado = await updateCliente(
-        clienteEditandoId.value,
-        payload
-      );
-
-      // Actualiza el cliente en la lista local
-      const index = clientes.value.findIndex(
-        (c) => c.id === clienteEditandoId.value
-      );
-      if (index !== -1) clientes.value[index] = clienteActualizado;
-      Swal.fire({
-        icon: "success",
-        title: "Cliente modificado",
-        showConfirmButton: false,
-        timer: 1500,
-      });
-    } else {
-      // Agregar cliente (POST)
-      // Contraseña obligatoria en creación
-      if (!payload.password || payload.password.trim() === "") {
-        Swal.fire({
-          icon: "error",
-          title: "La contraseña es obligatoria para el registro",
-          showConfirmButton: true,
-        });
-        return;
-      }
-
-      // En creación enviamos la contraseña en claro; el servidor se encargará
-      // de hashearla antes de persistirla.
-
-      const clienteAgregado = await addCliente(payload);
-      clientes.value.push(clienteAgregado);
-      Swal.fire({
-        icon: "success",
-        title: "Cliente agregado",
-        showConfirmButton: false,
-        timer: 1500,
-      });
-    }
-
-    // Reset formulario y estado
-    nuevoCliente.value = { ...clienteVacio };
-    clienteOriginalPassword.value = "";
-
-    editando.value = false;
-    clienteEditandoId.value = null;
-
-    // Reset validaciones si tienes (dniValido, movilValido, etc)
-    dniValido.value = true;
-    movilValido.value = true;
-    emailValido.value = true;
-
-    // Refrescar lista completa (opcional)
-    clientes.value = await getClientes();
-  } catch (error) {
-    console.error("Error al guardar cliente:", error);
-    Swal.fire({
-      icon: "error",
-      title: "Error al guardar cliente",
-      text: "Inténtelo de nuevo o contacte con el administrador.",
-      showConfirmButton: false,
-      timer: 1500,
-    });
-  }
-};
-
-// Funcion Eliminar Cliente con patch (histórico a false)
-const eliminarCliente = async (movil) => {
-  // Refrescar lista desde la API
-  clientes.value = await getClientes();
-  // Buscar cliente completo (que incluye el ID)
-  const clienteAEliminar = clientes.value.find(
-    (cliente) => cliente.movil === movil
-  );
-
-  if (!clienteAEliminar) {
-    Swal.fire({
-      icon: "error",
-      title: "Cliente no encontrado",
-      showConfirmButton: false,
-      timer: 1500,
-    });
+    Swal.fire("Error", "Hay campos inválidos", "error");
     return;
   }
 
-  // Pedir confirmación antes de eliminar
-  const result = await Swal.fire({
-    title: `¿Eliminar al cliente ${clienteAEliminar.nombre} ${clienteAEliminar.apellidos}?`,
+  const confirm = await Swal.fire({
+    title: editando.value ? "¿Modificar cliente?" : "¿Guardar cliente?",
     icon: "warning",
     showCancelButton: true,
-    confirmButtonText: "Sí, eliminar",
-    cancelButtonText: "Cancelar",
   });
 
-  // Si no confirma, salir
-  if (!result.isConfirmed) return;
+  if (!confirm.isConfirmed) return;
 
-  // Si confirma, eliminar cliente usando la API y movil como ID
-  await deleteCliente(clienteAEliminar.id);
-  // Refrescar la lista desde la "API"
-  clientes.value = await getClientes();
+  const payload = { ...nuevoCliente.value };
 
-  Swal.fire({
-    icon: "success",
-    title: "Cliente eliminado",
-    showConfirmButton: false,
-    timer: 1500,
-  });
+  if (editando.value) {
+    if (!payload.password) payload.password = clienteOriginalPassword.value;
+    await updateCliente(clienteEditandoId.value, payload);
+  } else {
+    if (!payload.password) {
+      Swal.fire("Error", "La contraseña es obligatoria", "error");
+      return;
+    }
+    await addCliente(payload);
+  }
+
+  Swal.fire("Éxito", "Operación realizada", "success");
+  refrescarFormulario();
+  await cargarClientes();
 };
 
-// Función Editar Cliente (carga datos en el formulario)
+const eliminarCliente = async (id) => {
+  const confirm = await Swal.fire({
+    title: "¿Eliminar cliente?",
+    icon: "warning",
+    showCancelButton: true,
+  });
+
+  if (!confirm.isConfirmed) return;
+
+  await deleteCliente(id);
+  await cargarClientes();
+};
+
 const editarCliente = (movil) => {
   const cliente = clientes.value.find((c) => c.movil === movil);
+  if (!cliente) return;
 
-  if (!cliente) {
-    Swal.fire({
-      icon: "error",
-      title: "Cliente no encontrado",
-      showConfirmButton: false,
-      timer: 1500,
-    });
-    return;
-  }
-
-  // Copiar datos al formulario
-  nuevoCliente.value = { ...cliente }; // 🔁 Aquí cargas el formulario con los datos
-  // No rellenar el input de contraseña con el hash (evitar mostrar hash en la UI)
+  nuevoCliente.value = { ...cliente };
   clienteOriginalPassword.value = cliente.password || "";
   nuevoCliente.value.password = "";
-  editando.value = true;
-  // Formatear fecha para el input type="date"
-  nuevoCliente.value.fecha_alta = formatearFechaParaInput(cliente.fecha_alta);
+  nuevoCliente.value.fecha_alta = formatearFecha(cliente.fecha_alta);
 
-  // Actualiza municipios filtrados según la provincia seleccionada
   filtrarMunicipios();
-  nuevoCliente.value.municipio = cliente.municipio; // 🟢 Ahora estamos en modo edición
+  editando.value = true;
   clienteEditandoId.value = cliente.id;
 };
 
-const activarCliente = async (cliente) => {
-  const confirmacion = await Swal.fire({
-    title: `¿Activar cliente ${cliente.nombre} ${cliente.apellidos}?`,
-    icon: "question",
-    showCancelButton: true,
-    confirmButtonText: "Activar",
-    cancelButtonText: "Cancelar",
-  });
-
-  if (!confirmacion.isConfirmed) return;
-
-  try {
-    // Crear una copia del cliente con historico en true
-    const clienteActivado = { ...cliente, historico: true };
-
-    // Llamar a la API para actualizar
-    const actualizado = await updateCliente(cliente.id, clienteActivado);
-
-    // Actualizar la lista local (opcional, también puedes volver a cargar todo)
-    const index = clientes.value.findIndex((c) => c.id === cliente.id);
-    if (index !== -1) {
-      clientes.value[index] = actualizado;
-    }
-
-    Swal.fire({
-      icon: "success",
-      title: "Cliente reactivado",
-      showConfirmButton: false,
-      timer: 1500,
-    });
-
-    // Recargar lista actualizada
-    await cargarClientes();
-  } catch (error) {
-    console.error("Error al reactivar cliente:", error);
-    Swal.fire({
-      icon: "error",
-      title: "Error al activar cliente",
-      text: "Por favor, intenta de nuevo.",
-      timer: 1500,
-    });
-  }
-};
-
+/* ===================== BUSQUEDAS ===================== */
 const buscarClientePorDNI = async (dni) => {
-  if (!dni || dni.trim() === "") {
-    Swal.fire({
-      icon: "warning",
-      title: "Debe introducir un DNI antes de buscar.",
-      timer: 1500,
-      showConfirmButton: false,
-    });
+  const cliente = await getClientePorDni(dni);
+  if (!cliente) {
+    Swal.fire("Info", "Cliente no encontrado", "info");
     return;
   }
-
-  try {
-    const cliente = await getClientePorDni(dni.trim().toUpperCase());
-
-    if (!cliente) {
-      Swal.fire({
-        icon: "info",
-        title: "Cliente no encontrado",
-        text: "No existe ningún cliente con ese DNI.",
-        timer: 1500,
-        showConfirmButton: false,
-      });
-      return;
-    }
-
-    // ✅ Cargar los datos en el formulario
-  nuevoCliente.value = { ...cliente };
-  // No mostrar el hash en el formulario
-  clienteOriginalPassword.value = cliente.password || "";
-  nuevoCliente.value.password = "";
-    nuevoCliente.value.fecha_alta = formatearFechaParaInput(cliente.fecha_alta);
-
-    // Actualiza lista de municipios si cambia la provincia
-    filtrarMunicipios();
-    nuevoCliente.value.municipio = cliente.municipio;
-    //opcional
-    editando.value = true;
-    clienteEditandoId.value = cliente.id;
-
-    Swal.fire({
-      icon: "success",
-      title: "Cliente encontrado y cargado",
-      timer: 1500,
-      showConfirmButton: false,
-    });
-  } catch (error) {
-    console.error("Error buscando cliente por DNI:", error);
-    Swal.fire({
-      icon: "error",
-      title: "Error al buscar cliente",
-      text: "Verifique la conexión o contacte con el administrador.",
-      timer: 2000,
-      showConfirmButton: false,
-    });
-  }
+  editarCliente(cliente.movil);
 };
 
-const buscarClientePorMovil = async (movil) => {
-  if (!movil || movil.trim() === "") {
-    Swal.fire({
-      icon: "warning",
-      title: "Debe introducir un móvil antes de buscar.",
-      timer: 1500,
-      showConfirmButton: false,
-    });
-    return;
-  }
-
-  try {
-    const all = await getClientes(true); // traer todos para buscar
-    const cliente = all.find((c) => c.movil === movil.trim());
-
-    if (!cliente) {
-      Swal.fire({
-        icon: "info",
-        title: "Cliente no encontrado",
-        text: "No existe ningún cliente con ese móvil.",
-        timer: 1500,
-        showConfirmButton: false,
-      });
-      return;
-    }
-
-  nuevoCliente.value = { ...cliente };
-  // No mostrar hash en el formulario
-  clienteOriginalPassword.value = cliente.password || "";
-  nuevoCliente.value.password = "";
-    nuevoCliente.value.fecha_alta = formatearFechaParaInput(cliente.fecha_alta);
-    filtrarMunicipios();
-    nuevoCliente.value.municipio = cliente.municipio;
-    editando.value = true;
-    clienteEditandoId.value = cliente.id;
-
-    Swal.fire({ icon: 'success', title: 'Cliente encontrado y cargado', timer: 1200, showConfirmButton: false });
-  } catch (error) {
-    console.error('Error buscando cliente por móvil:', error);
-    Swal.fire({ icon: 'error', title: 'Error al buscar por móvil', timer: 1500, showConfirmButton: false });
-  }
+/* ===================== VALIDACIONES ===================== */
+const validarDni = () => {
+  const v = nuevoCliente.value.dni.toUpperCase();
+  nuevoCliente.value.dni = v;
+  dniValido.value = validarDniNie(v);
 };
 
-/* =================================== SCRIPT AUXILIARES =================================== */
+const validarEmail = () => {
+  emailValido.value = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(nuevoCliente.value.email);
+};
 
-// Estado de validez del DNI/NIE si la estructura de datos es más compleja se usa reactive
-const dniValido = ref(true); // Por defecto es válido y no muestra error al iniciar
+const validarMovil = () => {
+  movilValido.value = /^[67]\d{8}$/.test(nuevoCliente.value.movil);
+};
 
-// Función para validar DNI y NIE
 const validarDniNie = (valor) => {
   const letras = "TRWAGMYFPDXBNJZSQVHLCKE";
-  const dniRegex = /^[0-9]{8}[A-Z]$/;
-  const nieRegex = /^[XYZ][0-9]{7}[A-Z]$/;
-
-  valor = valor.toUpperCase();
-
-  if (dniRegex.test(valor)) {
-    const numero = parseInt(valor.slice(0, 8), 10);
-    const letra = valor.charAt(8);
-    return letra === letras[numero % 23]; //sale con true si es válido
-  } else if (nieRegex.test(valor)) {
-    const nie = valor.replace("X", "0").replace("Y", "1").replace("Z", "2");
-    const numero = parseInt(nie.slice(0, 8), 10);
-    const letra = valor.charAt(8);
-    return letra === letras[numero % 23]; //sale con true si es válido
+  if (/^\d{8}[A-Z]$/.test(valor)) {
+    return letras[parseInt(valor.slice(0, 8)) % 23] === valor[8];
+  }
+  if (/^[XYZ]\d{7}[A-Z]$/.test(valor)) {
+    const num = valor.replace("X", "0").replace("Y", "1").replace("Z", "2");
+    return letras[parseInt(num.slice(0, 8)) % 23] === valor[8];
   }
   return false;
 };
 
-// Validar al salir del campo
-const validarDni = () => {
-  const dni = (nuevoCliente.value.dni || '').toString().trim().toUpperCase();
-  // Escribir de nuevo en el modelo para normalizar
-  nuevoCliente.value.dni = dni;
-  dniValido.value = validarDniNie(dni);
+/* ===================== UTILIDADES ===================== */
+const normalizarCliente = () => {
+  ["nombre", "apellidos", "direccion"].forEach(capitalizarTexto);
 };
 
-const beforePagina = () => {
-  if (currentPage.value > 1) {
-    currentPage.value--;
-  }
+const capitalizarTexto = (campo) => {
+  nuevoCliente.value[campo] = nuevoCliente.value[campo]
+    .toLowerCase()
+    .replace(/\b\w/g, (l) => l.toUpperCase());
 };
 
-const nextPagina = () => {
-  if (currentPage.value < totalPages.value) {
-    currentPage.value++;
-  }
+const filtrarMunicipios = () => {
+  const prov = provincias.value.find(
+    (p) => p.nm === nuevoCliente.value.provincia
+  );
+  municipiosFiltrados.value = prov
+    ? municipios.value.filter((m) => m.id.startsWith(prov.id.slice(0, 2)))
+    : [];
 };
 
-const clientesPaginados = computed(() => {
-  const start = (currentPage.value - 1) * clientesPorPage;
-  const end = start + clientesPorPage;
-  return clientes.value.slice(start, end);
-});
-
-const totalPages = computed(() => {
-  return Math.ceil(numClientes.value / clientesPorPage);
-});
-
-const refrescarPagina = () => {
+const refrescarFormulario = () => {
   nuevoCliente.value = { ...clienteVacio };
   editando.value = false;
   clienteEditandoId.value = null;
-
-  dniValido.value = true;
-  movilValido.value = true;
-  emailValido.value = true;
+  dniValido.value = emailValido.value = movilValido.value = true;
 };
 
-// Función única: capitaliza y asigna en el mismo paso
-const capitalizarTexto = (campo) => {
-  const texto = nuevoCliente.value[campo] ?? "";
-  nuevoCliente.value[campo] = texto
-    .toLowerCase()
-    .split(" ")
-    .map((palabra) => {
-      if (!palabra) return "";
-      return palabra.charAt(0).toLocaleUpperCase() + palabra.slice(1);
-    })
-    .join(" ");
+/* ===================== PAGINACIÓN ===================== */
+const clientesPaginados = computed(() => {
+  const start = (currentPage.value - 1) * clientesPorPage;
+  return clientes.value.slice(start, start + clientesPorPage);
+});
+
+const totalPages = computed(() =>
+  Math.ceil(numClientes.value / clientesPorPage)
+);
+
+const nextPagina = () => {
+  if (currentPage.value < totalPages.value) currentPage.value++;
 };
 
-// Validar email
-const emailValido = ref(true);
-const validarEmail = () => {
-  const email = nuevoCliente.value.email.trim();
-  // Expresión simple para email válido
-  const regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-  emailValido.value = regex.test(email);
+const beforePagina = () => {
+  if (currentPage.value > 1) currentPage.value--;
 };
 
-// Validar móvil
-const movilValido = ref(true);
-const movilRegex = /^[67]\d{8}$/;
-
-const validarMovil = () => {
-  const movil = nuevoCliente.value.movil.trim();
-
-  if (movil === "") {
-    movilValido.value = true; // Vacío = válido (opcional)
-    return true;
-  }
-
-  if (movil.charAt(0) === "6" || movil.charAt(0) === "7") {
-    movilValido.value = movilRegex.test(movil);
-    return movilValido.value;
-  } else {
-    movilValido.value = false;
-    return false;
-  }
-};
-
-// Provincias y municipios
-const provincias = ref(provmuniData.provincias); // Array de provincias
-const municipios = ref(provmuniData.municipios); // Array de municipios para filtrarlos
-const municipiosFiltrados = ref([]); // vacío pero contendrá los municipios filtrados
-
-const filtrarMunicipios = () => {
-  // nombre de la provincia elegida en el <select>
-  const nombreProv = nuevoCliente.value.provincia;
-
-  // 1️⃣ buscar en provincias el objeto con ese nombre
-  const prov = provincias.value.find((p) => p.nm === nombreProv);
-  if (!prov) {
-    municipiosFiltrados.value = [];
-    return;
-  }
-
-  // 2️⃣ los dos primeros dígitos del id de la provincia
-  const codigoProv = prov.id.slice(0, 2);
-
-  // 3️⃣ filtrar los municipios cuyo id empiece por esos dos dígitos
-  municipiosFiltrados.value = municipios.value.filter((m) =>
-    m.id.startsWith(codigoProv)
-  );
-
-  // 4️⃣ opcional: resetear el municipio si ya no corresponde
-  nuevoCliente.value.municipio = "";
-};
-
-// conversor fecha
-function formatearFechaParaInput(fecha) {
+/* ===================== FECHAS ===================== */
+const formatearFecha = (fecha) => {
   if (!fecha) return "";
-
-  // Detecta formato dd/mm/yyyy
   if (fecha.includes("/")) {
-    const [dd, mm, yyyy] = fecha.split("/");
-    return `${yyyy}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}`;
+    const [d, m, y] = fecha.split("/");
+    return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
   }
-
-  // Detecta formato yyyy-mm-dd
-  if (fecha.includes("-")) {
-    const partes = fecha.split("-");
-    if (partes.length === 3) return fecha; // ya formato ISO
-  }
-
-  return "";
-}
+  return fecha;
+};
 </script>
+
 
 <style scoped>
 .form-control {

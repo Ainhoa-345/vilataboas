@@ -3,7 +3,7 @@ import axios from 'axios'
 // para realizar solicitudes entre el navegador y el servidor,
 // URL base de la "API". Si usas json-server local, asegúrate de la IP:
 // Ahora apuntamos al backend Express que hace hashing server-side en /api/clientes
-const API_URL = 'http://localhost:5000/api/clientes'
+const API_URL = 'http://localhost:3000/clientes'
 
 // Función para obtener la lista de clientes desde la API
 
