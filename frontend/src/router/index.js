@@ -11,6 +11,7 @@ import MoDelos from "../components/MoDelos.vue";
 import TablaLogin from "../components/TablaLogin.vue";
 import ContacTo from "../components/ContacTo.vue";
 import Buscar from "../components/BusCar.vue";
+import Cesta from "../components/Cesta.vue";
 
 const routes = [
     {
@@ -54,6 +55,11 @@ const routes = [
         meta: {
             requiresAuth: true,
         }
+    },
+    {
+        path: '/cesta',
+        name: 'Cesta',
+        component: Cesta
     },
     {
         path: '/taller',

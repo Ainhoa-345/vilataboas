@@ -38,7 +38,13 @@
       </div>
 
       <div class="dropdown ms-auto">
-        <span class="text-white" v-if="isLogueado">{{ userName }}</span>
+        <span class="text-white me-3" v-if="isLogueado">{{ userName }}</span>
+
+        <!-- Cart icon linking to cesta -->
+        <router-link to="/cesta" class="text-white me-3 d-flex align-items-center cart-link" aria-label="Cesta de la compra">
+          <i class="bi bi-cart3 fs-4"></i>
+          <span v-if="totalItems > 0" class="badge bg-danger ms-1">{{ totalItems }}</span>
+        </router-link>
 
         <button class="btn btn-primary dropdown-toggle d-flex align-items-center" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Menú de usuario">
           <!-- User avatar icon (inline SVG) -->
@@ -64,13 +70,17 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { checkAdmin } from '@/api/authApi.js'
+import { useCestaStore } from '@/store/cesta'
 
 const isLogueado = ref(false)
 const userName = ref('')
 const isAdmin = ref(false)
 const isMenuOpen = ref(false)
+const cestaStore = useCestaStore()
+
+const totalItems = computed(() => cestaStore.totalItems)
 
 onMounted(async () => {
   isLogueado.value = sessionStorage.getItem('token') !== null

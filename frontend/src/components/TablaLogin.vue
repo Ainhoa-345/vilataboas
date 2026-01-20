@@ -67,7 +67,8 @@ export default {
     },
 
     async iniciarSesion() {
-      // Validar formulario antes de enviar
+      // Asegurar formato del DNI y validar formulario antes de enviar
+      this.dni = this.dni.toUpperCase().trim();
       if (!this.formularioValido) {
         Swal.fire({
           title: "Formulario inválido",
@@ -99,9 +100,11 @@ export default {
 
       } catch (error) {
         console.error("Error en iniciarSesion:", error);
+        // Intentar mostrar el mensaje concreto devuelto por el backend
+        const serverMessage = error && error.response && error.response.data && error.response.data.message;
         Swal.fire({
           title: "Error de autenticación",
-          text: "Error usuario o contraseña. Verifica tus credenciales.",
+          text: serverMessage || "Error usuario o contraseña. Verifica tus credenciales.",
           icon: "error",
           confirmButtonText: "Aceptar"
         });

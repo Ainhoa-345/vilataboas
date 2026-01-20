@@ -1,14 +1,24 @@
 import axios from "axios";
 
-// En entorno de desarrollo sin MongoDB el backend de artículos no está disponible
-// y usamos json-server (puerto 3000). Si despliegas con MongoDB/Express, cambia a 5000.
-const API_URL = "http://localhost:3000";
+// Usar el backend Express para artículos (dev: puerto 5000 -> /api/articulos).
+// Antes se apuntaba a json-server raíz; eso devolvía todo el JSON y los artículos
+// no tenían la misma forma (p.ej. imagen en /uploads). Apuntamos al router Express.
+const API_URL = "http://localhost:5000/api/articulos";
+const JSON_SERVER_URL = "http://localhost:3000/articulos";
 
 
 // Obtener todos los artículos
 export async function getArticulos() {
-  const res = await axios.get(API_URL);
-  return res.data;
+  try {
+    const res = await axios.get(API_URL, { timeout: 3000 });
+    return res.data;
+  } catch (err) {
+    // Fallback: si el backend Express no está disponible, intentar json-server
+    console.warn('Backend articulos no disponible en 5000, intentando json-server en 3000:', err.message || err);
+    const res = await axios.get(JSON_SERVER_URL);
+    // json-server devuelve objetos con estructura ligeramente distinta; devolver tal cual
+    return res.data;
+  }
 }
 
 // Obtener artículo por ID

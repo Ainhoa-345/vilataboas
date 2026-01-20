@@ -10,7 +10,12 @@ export const loginUsuario = async (dni, password) => {
     });
     return response.data; // { token, nombre, tipo }
   } catch (error) {
-    console.error("Error en loginUsuario:", error);
+    // Log más detallado para debugging: si hay respuesta del servidor, incluir status y body
+    if (error && error.response) {
+      console.error("Error en loginUsuario: status=", error.response.status, "data=", error.response.data);
+    } else {
+      console.error("Error en loginUsuario:", error);
+    }
     throw error;
   }
 };
