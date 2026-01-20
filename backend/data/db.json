@@ -610,6 +610,38 @@
       "historico": false,
       "lopd": true,
       "password": "$2a$10$gszpAl/Aa4u2B0y0zwiX4.QsNPkDDyqK3cSDHRDkfswkZbLdCCOSK"
+    },
+    {
+      "id": "b841",
+      "dni": "AUTOTEST384357",
+      "nombre": "Auto",
+      "apellidos": "Tester",
+      "email": "auto.AUTOTEST384357@example.com",
+      "movil": "600000000",
+      "direccion": "Calle Test 1",
+      "provincia": "Test",
+      "municipio": "Test",
+      "fecha_alta": "2026-01-20",
+      "tipoCliente": "particular",
+      "historico": false,
+      "lopd": true,
+      "password": "$2a$10$ukX6ZZVThIqwbg2tJyhsWuUByqutasNC3X3PjFw2xeM.4SN44h4TS"
+    },
+    {
+      "id": "2955",
+      "dni": "TEST0001A",
+      "nombre": "AutoTest",
+      "apellidos": "User",
+      "email": "auto.TEST0001A@example.com",
+      "movil": "600000000",
+      "direccion": "Test",
+      "provincia": "Test",
+      "municipio": "Test",
+      "fecha_alta": "2026-01-20",
+      "tipo_cliente": "particular",
+      "historico": false,
+      "lopd": true,
+      "password": "$2a$10$Hf81n8ZkBYyy9iSAx/Q5xualiLWVVGgKpF9pvZdyzGAaexghY234u"
     }
   ],
   "noticias": [
@@ -894,6 +926,7 @@
         "ciudad": "Santiago de Compostela",
         "provincia": "A Coruña"
       },
+  "imagen": "/uploads/toyota_corolla.jpeg",
       "contacto": {
         "nombre": "Juan Pérez",
         "telefono": "+34 612 345 678",
@@ -924,6 +957,7 @@
         "ciudad": "Vigo",
         "provincia": "Pontevedra"
       },
+  "imagen": "/uploads/volkswagen_golf.jpeg",
       "contacto": {
         "nombre": "María López",
         "telefono": "+34 698 112 903",
@@ -954,6 +988,7 @@
         "ciudad": "A Coruña",
         "provincia": "A Coruña"
       },
+  "imagen": "/uploads/peugeot_208.jpeg",
       "contacto": {
         "nombre": "Carlos Fernández",
         "telefono": "+34 611 223 345",
@@ -984,6 +1019,7 @@
         "ciudad": "Ourense",
         "provincia": "Ourense"
       },
+  "imagen": "/uploads/tesla_model3.jpeg",
       "contacto": {
         "nombre": "Laura González",
         "telefono": "+34 600 889 451",
@@ -1025,6 +1061,7 @@
         "$date": "2025-09-15T00:00:00.000Z"
       },
       "estado": "vendido",
+  "imagen": "/uploads/seat_leon.jpeg",
       "id": "8fa4"
     },
     {
@@ -1054,6 +1091,7 @@
         "$date": "2025-08-10T00:00:00.000Z"
       },
       "estado": "disponible",
+  "imagen": "/uploads/renault_clio.jpeg",
       "id": "a3a8"
     }
   ]
