@@ -39,7 +39,18 @@ export const validarFecha = () => {
 export const obtenerCitas = async () => {
   try {
     const res = await axios.get(API_URL);
-    return res.data;
+    // Normalizar campos snake_case -> camelCase para el frontend
+    return res.data.map(c => ({
+      id: c.id,
+      matricula: c.matricula || c.matricula,
+      movilCliente: c.movilCliente || c.movil_cliente || c.movil || "",
+      fechaCita: c.fechaCita || c.fecha_cita || c.fecha || "",
+      servicioTaller: c.servicioTaller || c.servicio_taller || c.servicio || "",
+      estadoCita: c.estadoCita || c.estado_cita || c.estado || "",
+      acepta: c.acepta || false,
+      // conservar campos extras
+      _raw: c
+    }));
   } catch (error) {
     console.error("Error al cargar citas:", error);
     return [];
@@ -57,18 +68,30 @@ export const guardarCita = async () => {
       return false;
     }
 
+    // Convertir a snake_case para guardar en json-server
+    const payload = {
+      id: nuevaCita.value.id,
+      matricula: nuevaCita.value.matricula,
+      movil_cliente: nuevaCita.value.movilCliente,
+      fecha_cita: nuevaCita.value.fechaCita,
+      servicio_taller: nuevaCita.value.servicioTaller,
+      estado_cita: nuevaCita.value.estadoCita,
+      acepta: nuevaCita.value.acepta
+    };
+
     if (nuevaCita.value.id) {
       // EDITAR
-      await axios.put(`${API_URL}/${nuevaCita.value.id}`, nuevaCita.value);
+      await axios.put(`${API_URL}/${nuevaCita.value.id}`, payload);
     } else {
       // CREAR NUEVA
       const allCitas = await obtenerCitas();
       const nuevoId = allCitas.length
-        ? Math.max(...allCitas.map(c => c.id)) + 1
+        ? Math.max(...allCitas.map(c => Number(c.id))) + 1
         : 1;
-      nuevaCita.value.id = nuevoId;
+      payload.id = String(nuevoId);
+      nuevaCita.value.id = String(nuevoId);
 
-      await axios.post(API_URL, nuevaCita.value);
+      await axios.post(API_URL, payload);
     }
 
     return true;

@@ -5,7 +5,6 @@
       <ul class="list-inline mb-0">
         <router-link to="/avisolegal" class="text-light text-decoration-none">Aviso legal </router-link>
         <router-link to="politicaprovacidad" class="text-light text-decoration-none">Política de privacidad </router-link>
-        <li class="list-inline-item"><a href="#" class="text-light text-decoration-none">Contacto</a></li>
       </ul>
     </div>
   </footer>

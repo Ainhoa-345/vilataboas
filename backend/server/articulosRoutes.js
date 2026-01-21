@@ -2,6 +2,8 @@
 import express from "express";
 import multer from "multer";
 import path from "path";
+import axios from 'axios';
+import mongoose from 'mongoose';
 import Articulo from "../modelos/Articulo.js";
 import { fileURLToPath } from "url";
 import fs from 'fs';
@@ -39,8 +41,39 @@ const upload = multer({ storage: storage });
 // AHORA VIENEN LAS RUTAS USANDO EL router DE EXPRESS
 // Obtener todos los artículo
 router.get("/", async (req, res) => {
-    const articulos = await Articulo.find();
-    res.json(articulos);
+    // Intentar obtener desde MongoDB pero con timeout corto;
+    // si falla o tarda, hacer fallback a json-server (dev).
+    const JSON_SERVER = 'http://localhost:3000/articulos';
+
+    const mongoPromise = (async () => {
+        try {
+            // Si mongoose no está conectado, lanzar para forzar fallback rápido
+            if (mongoose.connection && mongoose.connection.readyState !== 1) {
+                throw new Error('MongoDB no conectado');
+            }
+            return await Articulo.find().lean().exec();
+        } catch (e) {
+            throw e;
+        }
+    })();
+
+    // Timeout para fallback (ms)
+    const TIMEOUT_MS = 1200;
+    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('mongo-timeout')), TIMEOUT_MS));
+
+    try {
+        const articulos = await Promise.race([mongoPromise, timeoutPromise]);
+        return res.json(articulos);
+    } catch (err) {
+        console.warn('MongoDB ARTICULOS fallback:', err.message || err);
+        try {
+            const resp = await axios.get(JSON_SERVER, { timeout: 2000 });
+            return res.json(resp.data);
+        } catch (e) {
+            console.error('Error fallback json-server articulos:', e.message || e);
+            return res.status(500).json({ error: 'No se pudo obtener articulos' });
+        }
+    }
 });
 
 // Guardar artículo con imagen

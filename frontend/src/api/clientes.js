@@ -1,50 +1,48 @@
-import axios from 'axios'
-//  librería de JavaScript que actúa como un cliente HTTP 
-// para realizar solicitudes entre el navegador y el servidor,
-// URL base de la "API". Si usas json-server local, asegúrate de la IP:
-// Ahora apuntamos al backend Express que hace hashing server-side en /api/clientes
-const API_URL = 'http://localhost:3000/clientes'
+import axios from "axios";
 
-// Función para obtener la lista de clientes desde la API
+const BASE = "/api/clientes";
 
-export const getClientes = (mostrarHistorico) => {
-  let url = `${API_URL}?_sort=apellidos&_order=asc`;
-
-  if (!mostrarHistorico) {
-    // Solo clientes con histórico = true
-    url += `&historico=true`;
-  }
-  else {
-    // Todos los clientes, sin filtrar por histórico
-    url += ``;
-  } 
-
-  return axios.get(url).then(res => res.data);
+export const getClientes = async (incluirHistorico = false) => {
+  // envia un query param para que el backend devuelva también los clientes en histórico
+  // (ajusta el nombre del parámetro si vuestro backend espera otro)
+  const params = {};
+  if (incluirHistorico) params.withHistorico = 1;
+  const res = await axios.get(BASE, { params });
+  return res.data;
 };
 
-export const deleteCliente = (id) => {
-  return axios.patch(`${API_URL}/${id}`, {historico: false})
-              .then(res => res.data)
-}
-
-export const addCliente = (nuevoCliente) => {
-  return axios.post(API_URL, nuevoCliente)
-              .then(res => res.data)
-}
-
-export const updateCliente = (id, clienteActualizado) => {
-  return axios.put(`${API_URL}/${id}`, clienteActualizado)
-              .then(res => res.data)
-}
-
 export const getClientePorDni = async (dni) => {
-  try {
-    // Si tu API permite filtrar por DNI (ej. JSON-Server), puedes hacer:
-    const response = await axios.get(`${API_URL}?dni=${dni}`);
-    // Si devuelve un array, retornamos el primer resultado o null si no hay ninguno
-    return response.data.length > 0 ? response.data[0] : null;
-  } catch (error) {
-    console.error('Error buscando cliente por DNI:', error);
-    throw error;
-  }
+  const res = await axios.get(`${BASE}/dni/${encodeURIComponent(dni)}`);
+  return res.data;
+};
+
+// <-- añadido: alias/compatibilidad para getDni usado en el componente -->
+export const getDni = async (dni) => {
+  // devuelve lo mismo que getClientePorDni (ajusta si necesitas otro comportamiento)
+  return await getClientePorDni(dni);
+};
+
+export const getClientePorMovil = async (movil) => {
+  const res = await axios.get(`${BASE}/movil/${encodeURIComponent(movil)}`);
+  return res.data;
+};
+
+export const getClienteLogueado = async () => {
+  const res = await axios.get(`${BASE}/logueado`);
+  return res.data;
+};
+
+export const addCliente = async (payload) => {
+  const res = await axios.post(BASE, payload);
+  return res.data;
+};
+
+export const updateCliente = async (id, payload) => {
+  const res = await axios.put(`${BASE}/${encodeURIComponent(id)}`, payload);
+  return res.data;
+};
+
+export const deleteCliente = async (id) => {
+  const res = await axios.delete(`${BASE}/${encodeURIComponent(id)}`);
+  return res.data;
 };

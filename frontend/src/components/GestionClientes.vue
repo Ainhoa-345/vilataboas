@@ -1,86 +1,55 @@
 <template>
-  <div class="my-1 p-3 border rounded-0 shadow-sm bg-light">
-    <h4
-      class="text-center my-2 bg-primary-subtle text-primary p-3 rounded mb-4"
-    >
-      <i class="bi bi-person-fill me-2"></i> Registro de Clientes
-    </h4>
-
+  <div class="mx-auto mt-2 p-3 pb-5 border rounded-3 shadow-sm min-vh-75 bg-light">
+    <h3 class="text-center my-2">Registro de Clientes</h3>
     <!-- Formulario -->
     <form @submit.prevent="guardarCliente" class="mb-4">
       <!-- DNI con validación visual -->
       <div class="mb-3 row align-items-center">
         <!-- Columna DNI -->
         <div class="col-md-4 d-flex align-items-center">
-          <label for="dni" class="form-label mb-0 w-25">DNI: </label>
+          <label for="dni" class="form-label mb-0 w-25 me-5">DNI: </label>
           <div class="flex-grow-1 d-flex align-items-center">
-            <input
-              type="text"
-              id="dni"
-              v-model="nuevoCliente.dni"
-              @blur="validarDni"
-              class="form-control w-auto w-25 text-center ms-2"
-              :class="[
+            <input type="text" id="dni" v-model="nuevoCliente.dni" @blur="validarDni"
+              class="form-control w-auto w-25 text-center ms-4" :class="[
                 { 'is-invalid': !dniValido },
                 { 'readonly-input': editando },
-              ]"
-              :readonly="editando"
-              required
-              oninvalid="this.setCustomValidity('Por favor, rellene este campo')"
-              oninput="this.setCustomValidity('')"
-            />
-            <button
-              type="button"
-              class="btn btn btn-primary ms-3 border-0 shadow-none rounded-0"
-              @click="buscarClientePorDNI(nuevoCliente.dni)"
-              :disabled="editando"
-              :aria-disabled="String(editando)"
-              title="Buscar por DNI"
-            >
+              ]" :readonly="editando" required oninvalid="this.setCustomValidity('Por favor, rellene este campo')"
+              oninput="this.setCustomValidity('')" />
+            <button type="button" class="btn btn btn-primary ms-3 border-0 shadow-none rounded-0"
+              @click="buscarClientePorDNI(nuevoCliente.dni)" :disabled="editando" :aria-disabled="String(editando)"
+              title="Buscar por DNI">
               <i class="bi bi-search"></i>
             </button>
+
+            <div v-if="!dniValido" class="invalid-feedback">
+              DNI o NIE inválido.
+            </div>
           </div>
         </div>
-
         <!-- RadioButtons -->
         <div class="col-md-3 d-flex align-items-center me-5">
-          <label for="tipoCliente" class="form-label me-4 ms-5 mb-0 text-nowrap"
-            >Tipo Cliente:</label
-          >
-          <input type="radio" name="tipoCliente" id="tipoClienteParticular" value="particular">
-          <label for="tipoClienteParticular">Particular</label>
-
-          <input type="radio" name="tipoCliente" id="tipoClienteEmpresa" value="empresa">
-          <label for="tipoClienteEmpresa">Empresa</label>
-
+          <label for="tipoCliente" class="form-label me-4 ms-5 mb-0 text-nowrap">Tipo Cliente:</label>
+          <input type="radio" name="tipoCliente" id="tipoClienteParticular" value="particular" class="me-1"
+            v-model="nuevoCliente.tipoCliente" checked required />
+          <label class="me-4">Particular</label>
+          <input type="radio" name="tipoCliente" id="tipoClienteEmpresa" value="empresa" class="me-1"
+            v-model="nuevoCliente.tipoCliente" required />
+          <label>Empresa</label>
         </div>
 
         <!-- Columna Fecha de Alta a la derecha -->
-        <div class="col-md-3 d-flex align-items-center">
-          <label for="fecha_alta" class="form-label ms-5 me-3 mb-0 text-nowrap"
-            >Fecha de Alta:
-          </label>
-          <input
-            type="date"
-            id="fecha_alta"
-            v-model="nuevoCliente.fecha_alta"
-            class="form-control w-auto"
-            required
-            oninvalid="this.setCustomValidity('Por favor, rellene este campo')"
-            oninput="this.setCustomValidity('')"
-          />
-        </div>
+        <div class="col-md-4 ms-auto d-flex align-items-center">
+          <label for="fecha_alta" class="form-label me-2 mb-0 text-nowrap">Fecha de Alta:</label>
+          <input type="date" id="fecha_alta" v-model="nuevoCliente.fecha_alta" class="form-control w-auto" required
+            oninvalid="this.setCustomValidity('Por favor, rellene este campo')" oninput="this.setCustomValidity('')" />
 
-        <!-- Botón recargar -->
-        <div class="col-md-1 ms-auto d-flex align-items-center me-3">
-          <button
-            type="button"
-            class="btn btn btn-primary me-4 border-0 shadow-none rounded-0"
-            @click="refrescarPagina"
-            title="Refrescar Página"
-          >
-            <i class="bi bi-arrow-clockwise"></i>
-          </button>
+          <!-- Botón recargar -->
+          <div class="col-md-1 ms-auto d-flex align-items-center me-3">
+            <button type="button" class="btn btn btn-primary me-4 border-0 shadow-none rounded-0"
+              @click="refrescarPagina" title="Refrescar Página">
+              <i class="bi bi-arrow-clockwise"></i>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -88,32 +57,16 @@
       <div class="mb-3 row g-3 align-items-center">
         <!-- Nombre -->
         <div class="col-md-5 d-flex align-items-center">
-          <label for="nombre" class="form-label mb-0 text-nowrap w-25"
-            >Nombre:</label
-          >
-          <input
-            type="text"
-            id="nombre"
-            v-model="nuevoCliente.nombre"
-            class="form-control flex-grow-1"
-            @blur="capitalizarTexto('nombre')"
-            required
-          />
+          <label for="nombre" class="form-label mb-0 text-nowrap w-25">Nombre:</label>
+          <input type="text" id="nombre" v-model="nuevoCliente.nombre" class="form-control flex-grow-1"
+            @blur="capitalizarTexto('nombre')" required />
         </div>
 
         <!-- Apellidos -->
-        <div class="col-md-6 d-flex align-items-center ms-5">
-          <label for="apellidos" class="form-label me-4 mb-0 text-nowrap"
-            >Apellidos:</label
-          >
-          <input
-            type="text"
-            id="apellidos"
-            v-model="nuevoCliente.apellidos"
-            class="form-control flex-grow-1 ms-1"
-            @blur="capitalizarTexto('apellidos')"
-            required
-          />
+        <div class="col-md-4 d-flex align-items-center ms-5">
+          <label for="apellidos" class="form-label me-4 mb-0 text-nowrap">Apellidos:</label>
+          <input type="text" id="apellidos" v-model="nuevoCliente.apellidos" class="form-control flex-grow-1"
+            @blur="capitalizarTexto('apellidos')" required />
         </div>
       </div>
 
@@ -121,57 +74,16 @@
       <div class="mb-3 row g-3 align-items-center">
         <!-- Email -->
         <div class="col-md-5 d-flex align-items-center">
-          <label for="email" class="form-label mb-0 text-nowrap w-25"
-            >Email:</label
-          >
-          <input
-            type="email"
-            id="email"
-            v-model="nuevoCliente.email"
-            class="form-control flex-grow-1"
-            @blur="validarEmail"
-            :class="{ 'is-invalid': !emailValido }"
-            required
-          />
+          <label for="email" class="form-label mb-0 text-nowrap w-25">Email:</label>
+          <input type="email" id="email" v-model="nuevoCliente.email" class="form-control flex-grow-1"
+            @blur="validarEmail" :class="{ 'is-invalid': !emailValido }" required />
         </div>
 
         <!-- Móvil -->
         <div class="col-md-3 d-flex align-items-center">
-          <label for="movil" class="form-label me-4 ms-5 mb-0 text-nowrap"
-            >Móvil:</label
-          >
-          <input
-            type="tel"
-            id="movil"
-            v-model="nuevoCliente.movil"
-            @blur="validarMovil"
-            class="form-control flex-grow-1 text-center ms-4"
-            :class="{ 'is-invalid': !movilValido }"
-          />
-          <button
-            type="button"
-            class="btn btn-outline-primary ms-2"
-            @click="buscarClientePorMovil(nuevoCliente.movil)"
-            title="Buscar por móvil"
-          >
-            <i class="bi bi-search"></i>
-          </button>
-        </div>
-      </div>
-
-      <!-- Contraseña -->
-      <div class="mb-3 row g-3 align-items-center">
-        <div class="col-md-5 d-flex align-items-center">
-          <label for="password" class="form-label mb-0 text-nowrap w-25">Contraseña:</label>
-          <input
-            type="password"
-            id="password"
-            v-model="nuevoCliente.password"
-            :required="!editando"
-            minlength="6"
-            class="form-control flex-grow-1"
-            placeholder="Mínimo 6 caracteres"
-          />
+          <label for="movil" class="form-label me-4 ms-5 mb-0 text-nowrap">Móvil:</label>
+          <input type="tel" id="movil" v-model="nuevoCliente.movil" @blur="validarMovil"
+            class="form-control flex-grow-1 text-center" :class="{ 'is-invalid': !movilValido }" />
         </div>
       </div>
 
@@ -179,31 +91,17 @@
       <div class="mb-3 row g-3 align-items-center">
         <!-- Dirección -->
         <div class="col-md-5 d-flex align-items-center">
-          <label for="direccion" class="form-label mb-0 w-25 text-nowrap"
-            >Dirección:</label
-          >
-          <input
-            type="text"
-            id="direccion"
-            @blur="capitalizarTexto('direccion')"
-            v-model="nuevoCliente.direccion"
-            class="form-control flex-grow-1"
-          />
+          <label for="direccion" class="form-label mb-0 w-25 text-nowrap">Dirección:</label>
+          <input type="text" id="direccion" v-model="nuevoCliente.direccion" class="form-control flex-grow-1" />
         </div>
 
         <!-- Provincia -->
-        <div class="col-md-3 d-flex align-items-center me-1">
-          <label for="provincia" class="form-label me-4 ms-5 mb-0 text-nowrap"
-            >Provincia:</label
-          >
-          <select
-            id="provincia"
-            v-model="nuevoCliente.provincia"
-            class="form-select flex-grow-1 w-25"
-            @change="filtrarMunicipios"
-          >
+        <div class="col-md-3 d-flex align-items-center">
+          <label for="provincia" class="form-label me-2 ms-5 mb-0 text-nowrap">Provincia:</label>
+          <select id="provincia" v-model="nuevoCliente.provincia" class="form-select flex-grow-1 w-25"
+            @change="filtrarMunicipios">
             <option disabled value="">Seleccione provincia</option>
-            <option v-for="prov in provincias" :key="prov" :value="prov.nm">
+            <option v-for="prov in provincias" :key="prov.id" :value="prov.nm">
               {{ prov.nm }}
             </option>
           </select>
@@ -211,23 +109,38 @@
 
         <!-- Municipio -->
         <div class="col-md-3 d-flex align-items-center">
-          <label for="municipio" class="form-label me-2 ms-4 mb-0 text-nowrap"
-            >Municipio:</label
-          >
-          <select
-            id="municipio"
-            v-model="nuevoCliente.municipio"
-            class="form-select flex-grow-1 w-auto"
-          >
+          <label for="municipio" class="form-label me-2 ms-4 mb-0 text-nowrap">Municipio:</label>
+          <select id="municipio" v-model="nuevoCliente.municipio" class="form-select flex-grow-1 w-auto">
             <option disabled value="">Seleccione municipio</option>
-            <option
-              v-for="mun in municipiosFiltrados"
-              :key="mun"
-              :value="mun.nm"
-            >
+            <option v-for="mun in municipiosFiltrados" :key="mun.id" :value="mun.nm">
               {{ mun.nm }}
             </option>
           </select>
+        </div>
+      </div>
+      <!-- Contraseña y Repetir Contraseña -->
+      <div class="mb-3 row g-3 align-items-center justify-content-center">
+        <div class="col-md-4 d-flex align-items-center">
+          <label for="password" class="form-label mb-0 text-nowrap flex-shrink-0 me-2">Contraseña:</label>
+          <input
+            type="password"
+            id="password"
+            v-model="nuevoCliente.password"
+            class="form-control flex-grow-1"
+            :required="!editando"
+            autocomplete="new-password"
+          />
+        </div>
+        <div class="col-md-4 d-flex align-items-center ms-4">
+          <label for="repetirPassword" class="form-label mb-0 text-nowrap flex-shrink-0 me-2">Repetir Contraseña:</label>
+          <input
+            type="password"
+            id="repetirPassword"
+            v-model="repetirPassword"
+            class="form-control flex-grow-1"
+            :required="!editando"
+            autocomplete="new-password"
+          />
         </div>
       </div>
       <!-- Aceptar condiciones + Histórico -->
@@ -235,24 +148,15 @@
         <div class="d-flex align-items-center justify-content-between position-relative">
           <!-- Espacio izquierdo vacío para equilibrar -->
           <div style="flex: 1"></div>
-          
+
           <!-- Aceptar condiciones y términos (centro absoluto) -->
           <div class="position-absolute start-50 translate-middle-x">
             <div class="form-check d-flex align-items-center">
-              <input
-                type="checkbox"
-                id="avisoLegal"
-                class="form-check-input me-2"
-                v-model="nuevoCliente.lopd"
-                required
-              />
-              <label for="avisoLegal" class="form-check-label mb-0 text-nowrap">
+              <input type="checkbox" id="avisoLegal" class="form-check-input me-2" v-model="nuevoCliente.lopd"
+                required />
+              <label for="AvisoLegal" class="form-check-label mb-0 text-nowrap">
                 Aceptar términos y condiciones:
-                <a
-                  target="_blank"
-                  class="text-decoration-none"
-                  href="/AvisoLegal"
-                >
+                <a target="_blank" class="text-decoration-none" href="/avisolegal">
                   Aviso Legal
                 </a>
               </label>
@@ -261,127 +165,154 @@
 
           <!-- Histórico (derecha) -->
           <div class="ms-auto me-5">
-            <!-- Histórico solo visible para admin -->
-            <div v-if="isAdmin" class="form-switch d-flex align-items-center">
-              <input
-                type="checkbox"
-                id="historico"
-                v-model="mostrarHistorico"
-                class="form-check-input me-2"
-                @change="cargarClientes"
-              />
-              <label for="historico" class="form-check-label mb-0"
-                >Histórico</label
-              >
+            <div class="form-switch d-flex align-items-center">
+              <input type="checkbox" id="historico" v-model="mostrarHistorico" class="form-check-input me-2"
+                @change="cargarClientes" />
+              <label for="historico" class="form-check-label mb-0">Histórico</label>
             </div>
           </div>
         </div>
       </div>
-
-     <!-- Botón centrado (centro) -->
+      <!-- Botón centrado (centro) -->
       <div class="d-flex justify-content-center align-items-center">
-        <button
-          type="submit"
-          class="btn btn-primary border-0 shadow-none rounded-0"
-        >
+        <button type="submit" class="btn btn-primary border-0 shadow-none rounded-0">
           {{ editando ? "Modificar Cliente" : "Guardar" }}
         </button>
-        <button type="button" class="btn btn-secondary ms-3" @click="refrescarPagina">Limpiar</button>
       </div>
     </form>
-  <!-- Lista de Clientes (solo admin) -->
-  <div v-if="isAdmin" class="table-responsive">
-      <h4 class="text-center w-100">Listado Clientes</h4>
-      <table class="table table-bordered table-striped w-100 align-middle">
-        <thead class="table-primary">
-          <tr>
-            <th class="text-center">ID</th>
-            <th class="text-center">Apellidos</th>
-            <th class="text-center">Nombre</th>
-            <th class="text-center">Móvil</th>
-            <th class="text-center">Municipio</th>
-            <th class="text-center" style="width: 170px">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="(cliente, index) in clientesPaginados" :key="index">
-            <th scope="row" class="text-center">{{ index + 1 }}</th>
-            <td>{{ cliente.apellidos }}</td>
-            <td>{{ cliente.nombre }}</td>
-            <td class="text-center">{{ cliente.movil }}</td>
-            <td class="text-center">{{ cliente.municipio }}</td>
-            <td class="text-nowrap text-start">
-              <button
-                @click="eliminarCliente(cliente.movil)"
-                class="btn btn-danger btn-sm ms-4 me-2 border-0 shadow-none rounded-1"
-                title="Eliminar cliente"
-                aria-label="Eliminar cliente"
-              >
-                <i class="bi bi-trash"></i>
-              </button>
-              <button
-                @click="editarCliente(cliente.movil)"
-                class="btn btn-warning btn-sm border-0 shadow-none rounded-1"
-                title="Editar cliente"
-                aria-label="Editar cliente"
-              >
-                <i class="bi bi-pencil"></i>
-              </button>
-              <button
-                v-if="cliente.historico == false"
-                @click="activarCliente(cliente)"
-                class="btn btn-secondary btn-sm ms-2 border-0 shadow-none rounded-1"
-                title="Activar cliente"
-              >
-                <i class="bi bi-person-check"></i>
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-      <!-- Navegación de página-->
-      <div class="d-flex justify-content-center my-3">
-        <button
-          class="btn btn-outline-primary btn-sm me-2 rounded-0 border-1 shadow-none"
-          @click="beforePagina"
-          :disabled="currentPage <= 1"
-        >
-          <i class="bi bi-chevron-left"></i>
-        </button>
-        <span class="mx-3 align-self-center text-muted"
-          >Página {{ currentPage }}</span
-        >
-        <button
-          class="btn btn-outline-primary btn-sm rounded-0 border-1 shadow-none"
-          @click="nextPagina"
-          :disabled="currentPage >= totalPages"
-        >
-          <i class="bi bi-chevron-right"></i>
-        </button>
+  </div>
+
+  <!--Aceptar condiciones + Histórico
+  <div class="mb-4">
+    <div class="d-flex align-items-center justify-content-between position-relative">
+      Espacio izquierdo vacío para equilibrar 
+      <div style="flex: 1"></div>
+
+      Aceptar condiciones y términos (centro absoluto) 
+      <div class="position-absolute start-50 translate-middle-x">
+        <div class="form-check d-flex align-items-center">
+          <input type="checkbox" id="avisoLegal" class="form-check-input me-2" v-model="nuevoCliente.lopd" required />
+          <label for="AvisoLegal" class="form-check-label mb-0 text-nowrap">
+            Aceptar términos y condiciones:
+            <a target="_blank" class="text-decoration-none" href="/avisolegal">
+              Aviso Legal
+            </a>
+          </label>
+        </div>
+      </div>
+
+      Histórico (derecha) 
+      <div class="ms-auto me-5">
+        <div class="form-switch d-flex align-items-center">
+          <input type="checkbox" id="historico" v-model="mostrarHistorico" class="form-check-input me-2"
+            @change="cargarClientes" />
+          <label for="historico" class="form-check-label mb-0">Histórico</label>
+        </div>
       </div>
     </div>
-    <div v-else class="alert alert-secondary text-center">
-      A área de xestión de clientes só está dispoñible para administradores.
-    </div>
+  </div>-->
+
+  <!-- Botón centrado (centro) 
+  <div class="d-flex justify-content-center align-items-center">
+    <button type="submit" class="btn btn-primary border-0 shadow-none rounded-0">
+      {{ editando ? "Modificar Cliente" : "Guardar" }}
+    </button>
+  </div>-->
+
+  <!-- Lista de Clientes -->
+  <div v-if="admin" class="table-responsive">
+    <h4 class="text-center w-100">Listado Clientes</h4>
+    <table class="table table-bordered table-striped table-hover table-sm align-middle">
+      <thead class="table-primary">
+        <tr>
+          <th class="text-center" scope="col">ID</th>
+          <th scope="col">Apellidos</th>
+          <th scope="col">Nombre</th>
+          <th class="text-center" scope="col">Móvil</th>
+          <th class="text-center" scope="col">Municipio</th>
+          <th class="text-center" scope="col" style="width: 150px">
+            Acciones
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="(cliente, index) in clientesPaginados" :key="cliente.id || index">
+          <th scope="row" class="text-center">{{ (currentPage - 1) * clientesPerPage + index + 1 }}</th>
+          <td>{{ cliente.apellidos }}</td>
+          <td>{{ cliente.nombre }}</td>
+          <td class="text-center">{{ cliente.movil }}</td>
+          <td class="text-center">{{ cliente.municipio }}</td>
+          <td class="text-start">
+
+            <!-- Mostrar acciones SOLO para clientes activos cuando no estamos viendo histórico -->
+            <button
+              v-if="(cliente.historico === false || cliente.historico == null) && !mostrarHistorico"
+              @click="eliminarCliente(cliente.id)"
+              class="btn btn-danger btn-sm border-0 ms-4 me-2 shadow-none rounded-0"
+              title="Dar de baja (enviar a histórico)"
+            >
+              <i class="bi bi-trash"></i>
+            </button>
+
+            <button
+              v-if="(cliente.historico === false || cliente.historico == null) && !mostrarHistorico"
+              @click="editarCliente(cliente.id)"
+              class="btn btn-warning btn-sm shadow-none rounded-0"
+              title="Editar cliente"
+              aria-label="Editar cliente"
+            >
+              <i class="bi bi-pencil"></i>
+            </button>
+
+            <!-- Mostrar botón de reactivar SOLO cuando se está viendo el Histórico y el cliente está en histórico -->
+            <button
+              v-if="cliente.historico === true && mostrarHistorico"
+              @click="activarCliente(cliente)"
+              class="btn btn-secondary btn-sm ms-2 border-0 shadow-none rounded-0"
+              title="Activar cliente"
+            >
+              <i class="bi bi-person-check"></i>
+            </button>
+           </td>
+         </tr>
+       </tbody>
+     </table>
+   </div>
+
+  <!-- Navegación de página-->
+  <div v-if="admin" class="d-flex justify-content-center my-3">
+    <button class="btn btn-outline-primary btn-sm me-2 rounded-0 border-1 shadow-none" @click="beforePagina"
+      :disabled="currentPage <= 1">
+      <i class="bi bi-chevron-left "></i>
+    </button>
+    <span class="mx-3 align-self-center text-muted">Página {{ currentPage }}</span>
+    <button class="btn btn-outline-primary btn-sm rounded-0 border-1 shadow-none" @click="nextPagina"
+      :disabled="currentPage >= totalPages">
+      <i class="bi bi-chevron-right "></i>
+    </button>
   </div>
+
+  <!-- DEBUG: mostrar estado crudo mientras depuras -->
+  <!-- <div v-if="admin" class="p-3 bg-white border rounded mt-3">
+    <strong>DEBUG:</strong>
+    <div>isAdmin: {{ isAdmin }}</div>
+    <div>admin: {{ admin }}</div>
+    <div>numClientes: {{ numClientes }}</div>
+    <pre style="max-height:200px; overflow:auto; white-space:pre-wrap;">{{ JSON.stringify(clientes, null, 2) }}</pre>
+  </div> -->
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from "vue";
-import Swal from "sweetalert2";
+import { ref, onMounted, computed, watch } from "vue";
+import { useRouter } from "vue-router";
 import provmuniData from "@/data/provmuni.json";
+import Swal from "sweetalert2";
+import { getClientes, deleteCliente, addCliente, updateCliente, getClientePorDni, getDni, getClienteLogueado } from "@/api/clientes.js";
+import { registerUsuario, loginUsuario, checkAdmin } from "@/api/authApi.js";
 
-import {
-  getClientes,
-  addCliente,
-  updateCliente,
-  deleteCliente,
-  getClientePorDni
-} from "@/api/clientes.js";
+const router = useRouter();
 
-import { checkAdmin } from "@/api/authApi.js";
-
-/* ===================== ESTADO BASE ===================== */
+/* =================================== SCRIPT CRUD =================================== */
 const clienteVacio = {
   dni: "",
   nombre: "",
@@ -392,227 +323,551 @@ const clienteVacio = {
   provincia: "",
   municipio: "",
   fecha_alta: "",
-  historico: true,
-  tipoCliente: "particular",
+  tipo_cliente: "",
+  historico: false,
   lopd: false,
   password: "",
-};
+  tipo: "user"
+}
 
-const nuevoCliente = ref({ ...clienteVacio });
+const nuevoCliente = ref({
+  ...clienteVacio
+});
 
-const isAdmin = ref(false);
+const repetirPassword = ref("");
+
 const editando = ref(false);
 const clienteEditandoId = ref(null);
-const clienteOriginalPassword = ref("");
 
-const mostrarHistorico = ref(false); // muestra clientes activos por defecto
+var mostrarHistorico = ref(false);
 
+var numClientes = ref(0);
+var currentPage = ref(1);
+var clientesPerPage = ref(10);
 
-/* ===================== LISTADO ===================== */
+const isAdmin = ref(false);
+const admin = ref(false)
+
+/// se carga en el onmounted ya que necesita llamar al back
+var dni;
+
+/// Computed: verifica si está editando su propio perfil
+const editingCurrentUser = computed(() => {
+  return nuevoCliente.value.dni === dni && editando.value;
+});
+
+/// Función Listar Clientes con get
 const clientes = ref([]);
-const numClientes = ref(0);
-const currentPage = ref(1);
-const clientesPorPage = 10;
 
-/* ===================== VALIDACIONES ===================== */
-const dniValido = ref(true);
-const emailValido = ref(true);
-const movilValido = ref(true);
-
-/* ===================== PROVINCIAS / MUNICIPIOS ===================== */
-const provincias = ref(provmuniData.provincias);
-const municipios = ref(provmuniData.municipios);
-const municipiosFiltrados = ref([]);
-
-/* ===================== CICLO DE VIDA ===================== */
+/// Cargar clientes al montar el componente
+// Zona Cargar clientes Al Montar el componente 
 onMounted(async () => {
   try {
-    // 🔐 CONTROL DE ADMIN
-    isAdmin.value = checkAdmin(); // Devuelve true solo si user.tipo === "admin"
+    const resp = await checkAdmin();
+    // soportar { isAdmin: true }, { admin: true } o booleano simple
+    if (typeof resp === "boolean") {
+      isAdmin.value = resp;
+    } else if (resp && typeof resp === "object") {
+      isAdmin.value = !!(resp.isAdmin || resp.admin || resp.is_admin || resp.isadministrator);
+    } else {
+      isAdmin.value = Boolean(resp);
+    }
+    console.debug("checkAdmin response:", resp, "isAdmin:", isAdmin.value);
+
+    // sincronizar flag usado en el template
+    admin.value = isAdmin.value;
 
     if (isAdmin.value) {
       await cargarClientes();
+    } else {
+      clientes.value = [];
+      numClientes.value = 0;
     }
   } catch (error) {
-    console.error("Error comprobando permisos de admin:", error);
-    isAdmin.value = false;
+    console.error("onMounted error:", error);
+    clientes.value = [];
+    numClientes.value = 0;
   }
-});
+})
 
-/* ===================== CRUD ===================== */
-const cargarClientes = async () => {
+const updateTabla = async () => {
   try {
-    const data = await getClientes(); // ignorando el parámetro
-    console.log("Clientes recibidos:", data);
-    clientes.value = data;
-    numClientes.value = data.length;
-    currentPage.value = 1;
-  } catch (error) {
-    console.error("Error cargando clientes:", error);
+    await cargarClientes();
+  } catch (e) {
+    console.error("updateTabla error:", e);
   }
 };
+
+///avanzar y retroceder
+
+// Métodos de paginación
+const beforePagina = () => {
+  if (currentPage.value > 1) {
+    currentPage.value--;
+  }
+};
+
+const nextPagina = () => {
+  //redondear hacia arriba para mostrar la última página aunque no esté completa
+
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++;
+  }
+};
+
+const clientesPaginados = computed(() => {
+  const start = (currentPage.value - 1) * clientesPerPage.value
+  const end = start + clientesPerPage.value
+  return clientes.value.slice(start, end)
+})
+
+
+const cargarClientes = async () => {
+  try {
+    currentPage.value = 1;
+    console.debug("Solicitando clientes, incluirHistorico=", mostrarHistorico.value);
+    const data = await getClientes(mostrarHistorico.value);
+    console.debug("Respuesta GET /api/clientes:", data);
+    const raw = Array.isArray(data) ? data : [];
+    // Filtrar según el switch mostrarHistorico:
+    // - si mostrarHistorico está activo => mostrar SOLO los históricos (historico === true)
+    // - si está desactivado => mostrar solo activos (historico !== true)
+    if (mostrarHistorico.value) {
+      clientes.value = raw.filter(c => c.historico === true || c.historico === 'true' || c.historico === 1 || c.historico === '1');
+    } else {
+      clientes.value = raw.filter(c => !(c.historico === true || c.historico === 'true' || c.historico === 1 || c.historico === '1'));
+    }
+     numClientes.value = clientes.value.length;
+     currentPage.value = 1;
+   } catch (error) {
+     console.error("Error cargando clientes:", error);
+     clientes.value = [];
+     numClientes.value = 0;
+   }
+ };
+
+// recargar cuando se cambie el switch de histórico
+watch(mostrarHistorico, async () => {
+  if (isAdmin.value) await cargarClientes();
+});
+
+// Opcional: recargar si isAdmin cambia a true en runtime
+watch(isAdmin, async (val) => {
+  if (val) await cargarClientes();
+});
+
+const totalPages = computed(() => {
+  return Math.ceil(numClientes.value / clientesPerPage.value)
+})
 
 
 const guardarCliente = async () => {
-  normalizarCliente();
-
-  if (!dniValido.value || !emailValido.value || !movilValido.value) {
-    Swal.fire("Error", "Hay campos inválidos", "error");
+  // Validar contraseñas
+  if (nuevoCliente.value.password !== repetirPassword.value) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Error en contraseña',
+      text: 'Las contraseñas no coinciden.',
+      showConfirmButton: true
+    });
     return;
   }
 
-  const confirm = await Swal.fire({
-    title: editando.value ? "¿Modificar cliente?" : "¿Guardar cliente?",
-    icon: "warning",
-    showCancelButton: true,
-  });
-
-  if (!confirm.isConfirmed) return;
-
-  const payload = { ...nuevoCliente.value };
-
-  if (editando.value) {
-    if (!payload.password) payload.password = clienteOriginalPassword.value;
-    await updateCliente(clienteEditandoId.value, payload);
-  } else {
-    if (!payload.password) {
-      Swal.fire("Error", "La contraseña es obligatoria", "error");
+  // Validar duplicados solo si estás creando (no si editando)
+  if (!editando.value) {
+    const duplicado = clientes.value.find(cliente =>
+      cliente.dni === nuevoCliente.value.dni ||
+      cliente.movil === nuevoCliente.value.movil ||
+      cliente.email === nuevoCliente.value.email
+    );
+    if (duplicado) {
+      Swal.fire({
+        icon: 'error',
+        title: 'DNI, móvil o email duplicados',
+        showConfirmButton: false,
+        timer: 2000
+      });
       return;
     }
-    await addCliente(payload);
   }
 
-  Swal.fire("Éxito", "Operación realizada", "success");
-  refrescarFormulario();
-  await cargarClientes();
-};
-
-const eliminarCliente = async (id) => {
-  const confirm = await Swal.fire({
-    title: "¿Eliminar cliente?",
-    icon: "warning",
+  // Confirmación antes de guardar
+  const result = await Swal.fire({
+    title: editando.value ? '¿Desea modificar este cliente?' : '¿Desea grabar este cliente?',
+    icon: 'warning',
     showCancelButton: true,
+    confirmButtonText: editando.value ? 'Modificar' : 'Grabar',
+    cancelButtonText: 'Cancelar'
   });
 
-  if (!confirm.isConfirmed) return;
+  if (!result.isConfirmed) return;
 
-  await deleteCliente(id);
-  await cargarClientes();
+  try {
+    if (editando.value) {
+      // MODIFICAR CLIENTE EXISTENTE
+      const datosActualizados = { ...nuevoCliente.value };
+      // Delegar el hash al backend: enviar la contraseña en claro y que el servidor la procese
+      if (nuevoCliente.value.password) {
+        datosActualizados.password = nuevoCliente.value.password;
+      } else {
+        delete datosActualizados.password;
+      }
+      await updateCliente(clienteEditandoId.value, datosActualizados); // <-- MODIFICA EL EXISTENTE
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Cliente modificado',
+        showConfirmButton: false,
+        timer: 1500
+      });
+    } else {
+      // CREAR NUEVO CLIENTE
+      await registerUsuario({
+        dni: nuevoCliente.value.dni,
+        password: nuevoCliente.value.password,
+        nombre: nuevoCliente.value.nombre,
+        apellidos: nuevoCliente.value.apellidos,
+        email: nuevoCliente.value.email,
+        movil: nuevoCliente.value.movil,
+        direccion: nuevoCliente.value.direccion,
+        provincia: nuevoCliente.value.provincia,
+        municipio: nuevoCliente.value.municipio,
+        fecha_alta: nuevoCliente.value.fecha_alta,
+        tipo_cliente: nuevoCliente.value.tipoCliente,
+        lopd: nuevoCliente.value.lopd
+      });
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Cliente agregado',
+        showConfirmButton: false,
+        timer: 1500
+      });
+    }
+
+    // Reset formulario y estado
+    nuevoCliente.value = { ...clienteVacio };
+    editando.value = false;
+    clienteEditandoId.value = null;
+    repetirPassword.value = "";
+
+    // Refrescar lista completa
+    updateTabla();
+
+  } catch (error) {
+    console.error('Error al guardar cliente:', error);
+    Swal.fire({
+      icon: 'error',
+      title: 'Error al guardar cliente',
+      text: error?.response?.data?.message || error.message || 'Inténtelo de nuevo o contacte con el administrador.',
+      showConfirmButton: false,
+      timer: 3000
+    });
+  }
 };
 
-const editarCliente = (movil) => {
-  const cliente = clientes.value.find((c) => c.movil === movil);
-  if (!cliente) return;
+// Funcion Eliminar Cliente: marcar historico (no borrar) usando el id
+const eliminarCliente = async (id) => {
+  // refrescar lista antes de operar
+  await updateTabla();
+  const clienteAEliminar = clientes.value.find(c => String(c.id) === String(id));
 
-  nuevoCliente.value = { ...cliente };
-  clienteOriginalPassword.value = cliente.password || "";
-  nuevoCliente.value.password = "";
-  nuevoCliente.value.fecha_alta = formatearFecha(cliente.fecha_alta);
-
-  filtrarMunicipios();
-  editando.value = true;
-  clienteEditandoId.value = cliente.id;
-};
-
-/* ===================== BUSQUEDAS ===================== */
-const buscarClientePorDNI = async (dni) => {
-  const cliente = await getClientePorDni(dni);
-  if (!cliente) {
-    Swal.fire("Info", "Cliente no encontrado", "info");
+  if (!clienteAEliminar) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Cliente no encontrado',
+      showConfirmButton: false,
+      timer: 1500
+    });
     return;
   }
-  editarCliente(cliente.movil);
+
+  // Pedir confirmación antes de eliminar
+  const result = await Swal.fire({
+    title: `¿Eliminar al cliente ${clienteAEliminar.nombre} ${clienteAEliminar.apellidos}?`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Sí, eliminar',
+    cancelButtonText: 'Cancelar'
+  });
+
+
+  // Si no confirma, salir
+  if (!result.isConfirmed) return;
+
+  // marcar como histórico (baja) en vez de borrar
+  try {
+    // DAR DE BAJA => historico = true
+    await updateCliente(clienteAEliminar.id, { ...clienteAEliminar, historico: true });
+    await cargarClientes();
+  } catch (error) {
+    console.error('Error marcando histórico:', error);
+    Swal.fire({ icon: 'error', title: 'Error al eliminar cliente', timer: 1500 });
+    return;
+  }
+
+  Swal.fire({
+    icon: 'success',
+    title: 'Cliente eliminado',
+    showConfirmButton: false,
+    timer: 1500
+  });
 };
 
-/* ===================== VALIDACIONES ===================== */
-const validarDni = () => {
-  const v = nuevoCliente.value.dni.toUpperCase();
-  nuevoCliente.value.dni = v;
-  dniValido.value = validarDniNie(v);
+
+// Función Editar Cliente (carga datos en el formulario)
+const editarCliente = (id) => {
+  const cliente = clientes.value.find((c) => String(c.id) === String(id));
+  if (!cliente) return;
+  nuevoCliente.value = { ...cliente, password: "" };
+  editando.value = true;
+  clienteEditandoId.value = cliente.id;
+  nuevoCliente.value.fecha_alta = formatearFechaParaInput(cliente.fecha_alta);
+}
+
+
+const activarCliente = async (cliente) => {
+  const confirmacion = await Swal.fire({
+    title: `¿Activar cliente ${cliente.nombre} ${cliente.apellidos}?`,
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonText: 'Activar',
+    cancelButtonText: 'Cancelar'
+  });
+
+  if (!confirmacion.isConfirmed) return;
+
+  try {
+    // Crear una copia del cliente con historico en true
+    const clienteActivado = { ...cliente, historico: false };
+
+    // Llamar a la API para actualizar
+    const actualizado = await updateCliente(cliente.id, clienteActivado);
+
+    // Actualizar la lista local (opcional, también puedes volver a cargar todo)
+    const index = clientes.value.findIndex(c => c.id === cliente.id);
+    if (index !== -1) {
+      clientes.value[index] = actualizado;
+    }
+
+    Swal.fire({
+      icon: 'success',
+      title: 'Cliente reactivado',
+      showConfirmButton: false,
+      timer: 1500
+    });
+
+    // Recargar lista actualizada
+    cargarClientes();
+
+  } catch (error) {
+    console.error('Error al reactivar cliente:', error);
+    Swal.fire({
+      icon: 'error',
+      title: 'Error al activar cliente',
+      text: 'Por favor, intenta de nuevo.',
+      timer: 1500
+    });
+  }
 };
 
-const validarEmail = () => {
-  emailValido.value = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(nuevoCliente.value.email);
-};
+///CODIGO BUSQUEDA COMPONENTES
 
-const validarMovil = () => {
-  movilValido.value = /^[67]\d{8}$/.test(nuevoCliente.value.movil);
-};
+const buscarClientePorDNI = async (dni) => {
+  if (!dni || dni.trim() === '') {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Debe introducir un DNI antes de buscar.',
+      timer: 1500,
+      showConfirmButton: false
+    });
+    return;
+  }
 
+  try {
+    const cliente = await getClientePorDni(dni.trim().toUpperCase());
+    console.log('Datos de mi perfil:', cliente); // <-- Añade esto
+
+    if (!cliente) {
+      Swal.fire({
+        icon: 'info',
+        title: 'Cliente no encontrado',
+        text: 'No existe ningún cliente con ese DNI.',
+        timer: 1500,
+        showConfirmButton: false
+      });
+      return;
+    }
+
+    // ✅ Cargar los datos en el formulario
+    nuevoCliente.value = { ...cliente, password: "" };
+    nuevoCliente.value.fecha_alta = formatearFechaParaInput(cliente.fecha_alta);
+
+    // Actualiza lista de municipios si cambia la provincia
+    filtrarMunicipios();
+    nuevoCliente.value.municipio = cliente.municipio;
+
+    //opcional
+    editando.value = true;
+    clienteEditandoId.value = cliente.id;
+
+    Swal.fire({
+      icon: 'success',
+      title: 'Cliente encontrado y cargado',
+      timer: 1500,
+      showConfirmButton: false
+    });
+  } catch (error) {
+    console.error('Error buscando cliente por DNI:', error);
+    Swal.fire({
+      icon: 'error',
+      title: 'Error al buscar cliente',
+      text: 'Verifique la conexión o contacte con el administrador.',
+      timer: 2000,
+      showConfirmButton: false
+    });
+  }
+}
+const vaciarFormulario = async () => {
+  nuevoCliente.value = { ...clienteVacio };
+  repetirPassword.value = "";
+  editando.value = false;
+  clienteEditandoId.value = null;
+
+  dniValido.value = true;
+  movilValido.value = true;
+  emailValido.value = true;
+}
+
+/* =================================== SCRIPT AUXILIARES =================================== */
+
+// Estado de validez del DNI/NIE si la estructura de datos es más compleja se usa reactive
+const dniValido = ref(true); // Por defecto es válido y no muestra error al iniciar
+
+// Función para validar DNI y NIE
 const validarDniNie = (valor) => {
   const letras = "TRWAGMYFPDXBNJZSQVHLCKE";
-  if (/^\d{8}[A-Z]$/.test(valor)) {
-    return letras[parseInt(valor.slice(0, 8)) % 23] === valor[8];
-  }
-  if (/^[XYZ]\d{7}[A-Z]$/.test(valor)) {
-    const num = valor.replace("X", "0").replace("Y", "1").replace("Z", "2");
-    return letras[parseInt(num.slice(0, 8)) % 23] === valor[8];
+  const dniRegex = /^[0-9]{8}[A-Z]$/;
+  const nieRegex = /^[XYZ][0-9]{7}[A-Z]$/;
+
+  valor = valor.toUpperCase();
+
+  if (dniRegex.test(valor)) {
+    const numero = parseInt(valor.slice(0, 8), 10);
+    const letra = valor.charAt(8);
+    return letra === letras[numero % 23]; //sale con true si es válido
+  } else if (nieRegex.test(valor)) {
+    const nie = valor.replace("X", "0").replace("Y", "1").replace("Z", "2");
+    const numero = parseInt(nie.slice(0, 8), 10);
+    const letra = valor.charAt(8);
+    return letra === letras[numero % 23]; //sale con true si es válido
   }
   return false;
 };
 
-/* ===================== UTILIDADES ===================== */
-const normalizarCliente = () => {
-  ["nombre", "apellidos", "direccion"].forEach(capitalizarTexto);
+// Validar al salir del campo
+const validarDni = () => {
+  const dni = nuevoCliente.value.dni.trim().toUpperCase();
+  dniValido.value = validarDniNie(dni);
 };
 
+// Función única: capitaliza y asigna en el mismo paso
 const capitalizarTexto = (campo) => {
-  nuevoCliente.value[campo] = nuevoCliente.value[campo]
+  const texto = nuevoCliente.value[campo] ?? "";
+  nuevoCliente.value[campo] = texto
     .toLowerCase()
-    .replace(/\b\w/g, (l) => l.toUpperCase());
+    .split(" ")
+    .map((palabra) => {
+      if (!palabra) return "";
+      return palabra.charAt(0).toLocaleUpperCase() + palabra.slice(1);
+    })
+    .join(" ");
 };
+
+// Validar email
+const emailValido = ref(true);
+const validarEmail = () => {
+  const email = nuevoCliente.value.email.trim();
+  // Expresión simple para email válido
+  const regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  emailValido.value = regex.test(email);
+};
+
+// Validar móvil
+const movilValido = ref(true);
+const movilRegex = /^[67]\d{8}$/;
+
+const validarMovil = () => {
+  const movil = nuevoCliente.value.movil.trim();
+
+  if (movil === "") {
+    movilValido.value = true; // Vacío = válido (opcional)
+    return true;
+  }
+
+  if (movil.charAt(0) === "6" || movil.charAt(0) === "7") {
+    movilValido.value = movilRegex.test(movil);
+    return movilValido.value;
+  } else {
+    movilValido.value = false;
+    return false;
+  }
+};
+
+// Provincias y municipios
+const provincias = ref(provmuniData.provincias); // Array de provincias
+const municipios = ref(provmuniData.municipios); // Array de municipios para filtrarlos
+const municipiosFiltrados = ref([]); // vacío pero contendrá los municipios filtrados
 
 const filtrarMunicipios = () => {
-  const prov = provincias.value.find(
-    (p) => p.nm === nuevoCliente.value.provincia
-  );
-  municipiosFiltrados.value = prov
-    ? municipios.value.filter((m) => m.id.startsWith(prov.id.slice(0, 2)))
-    : [];
-};
+  // nombre de la provincia elegida en el <select>
+  const nombreProv = nuevoCliente.value.provincia;
 
-const refrescarFormulario = () => {
-  nuevoCliente.value = { ...clienteVacio };
-  editando.value = false;
-  clienteEditandoId.value = null;
-  dniValido.value = emailValido.value = movilValido.value = true;
-};
-
-/* ===================== PAGINACIÓN ===================== */
-const clientesPaginados = computed(() => {
-  const start = (currentPage.value - 1) * clientesPorPage;
-  return clientes.value.slice(start, start + clientesPorPage);
-});
-
-const totalPages = computed(() =>
-  Math.ceil(numClientes.value / clientesPorPage)
-);
-
-const nextPagina = () => {
-  if (currentPage.value < totalPages.value) currentPage.value++;
-};
-
-const beforePagina = () => {
-  if (currentPage.value > 1) currentPage.value--;
-};
-
-/* ===================== FECHAS ===================== */
-const formatearFecha = (fecha) => {
-  if (!fecha) return "";
-  if (fecha.includes("/")) {
-    const [d, m, y] = fecha.split("/");
-    return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
+  // 1️⃣ buscar en provincias el objeto con ese nombre
+  const prov = provincias.value.find((p) => p.nm === nombreProv);
+  if (!prov) {
+    municipiosFiltrados.value = [];
+    return;
   }
-  return fecha;
+
+  // 2️⃣ los dos primeros dígitos del id de la provincia
+  const codigoProv = prov.id.slice(0, 2);
+
+  // 3️⃣ filtrar los municipios cuyo id empiece por esos dos dígitos
+  municipiosFiltrados.value = municipios.value.filter((m) =>
+    m.id.startsWith(codigoProv)
+  );
+
+  // 4️⃣ opcional: resetear el municipio si ya no corresponde
+  nuevoCliente.value.municipio = "";
 };
+
+// conversor fecha
+function formatearFechaParaInput(fecha) {
+  if (!fecha) return '';
+
+  // Detecta formato dd/mm/yyyy
+  if (fecha.includes('/')) {
+    const [dd, mm, yyyy] = fecha.split('/');
+    return `${yyyy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`;
+  }
+
+  // Detecta formato yyyy-mm-dd
+  if (fecha.includes('-')) {
+    const partes = fecha.split('-');
+    if (partes.length === 3) return fecha.slice(0, 10); // solo yyyy-mm-dd
+  }
+
+  // Detecta formato ISO (ejemplo: 2026-01-21T00:00:00.000Z)
+  if (fecha.length >= 10 && fecha[4] === '-' && fecha[7] === '-') {
+    return fecha.slice(0, 10);
+  }
+
+  return '';
+}
 </script>
 
-
 <style scoped>
-.form-control {
-  width: 100%;
-}
-
 .is-invalid {
   border-color: #f28b82 !important;
   background-color: #ffe6e6;
@@ -622,14 +877,18 @@ const formatearFecha = (fecha) => {
   display: block;
 }
 
-/* Visual for readonly/locked inputs when editing a cliente */
-.readonly-input {
-  background-color: #eef2f6 !important; /* soft gray */
-  cursor: not-allowed;
-  color: #495057; /* slightly muted text color */
+#app>main>div>form>div:nth-child(2)>div.col-md-6.d-flex.align-items-center.ms-auto {
+  margin-left: 48px !important;
 }
 
-#fecha_alta + button {
-  margin-left: auto !important;
+.gestion-clientes {
+  width: 95%;
+  max-width: none;
+  margin: 0 auto;
+  padding: 2rem 0;
+}
+
+.form-control {
+  width: 100%;
 }
 </style>

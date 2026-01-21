@@ -403,7 +403,7 @@
       "municipio": "Alájar",
       "fecha_alta": "2025-10-09",
       "tipo_cliente": "particular",
-      "historico": true,
+      "historico": false,
       "lopd": true,
       "password": "$2b$10$GsZ1GmrPDOTvC779k3DLdunlOk3Im2Zh2fQ97XvDQV1XA3pcXGe.G",
       "tipo": "user"
@@ -926,7 +926,7 @@
         "ciudad": "Santiago de Compostela",
         "provincia": "A Coruña"
       },
-  "imagen": "/uploads/toyota_corolla.jpeg",
+      "imagen": "/uploads/toyota_corolla.jpeg",
       "contacto": {
         "nombre": "Juan Pérez",
         "telefono": "+34 612 345 678",
@@ -957,7 +957,7 @@
         "ciudad": "Vigo",
         "provincia": "Pontevedra"
       },
-  "imagen": "/uploads/volkswagen_golf.jpeg",
+      "imagen": "/uploads/volkswagen_golf.jpeg",
       "contacto": {
         "nombre": "María López",
         "telefono": "+34 698 112 903",
@@ -988,7 +988,7 @@
         "ciudad": "A Coruña",
         "provincia": "A Coruña"
       },
-  "imagen": "/uploads/peugeot_208.jpeg",
+      "imagen": "/uploads/peugeot_208.jpeg",
       "contacto": {
         "nombre": "Carlos Fernández",
         "telefono": "+34 611 223 345",
@@ -1019,7 +1019,7 @@
         "ciudad": "Ourense",
         "provincia": "Ourense"
       },
-  "imagen": "/uploads/tesla_model3.jpeg",
+      "imagen": "/uploads/tesla_model3.jpeg",
       "contacto": {
         "nombre": "Laura González",
         "telefono": "+34 600 889 451",
@@ -1061,7 +1061,7 @@
         "$date": "2025-09-15T00:00:00.000Z"
       },
       "estado": "vendido",
-  "imagen": "/uploads/seat_leon.jpeg",
+      "imagen": "/uploads/seat_leon.jpeg",
       "id": "8fa4"
     },
     {
@@ -1091,7 +1091,7 @@
         "$date": "2025-08-10T00:00:00.000Z"
       },
       "estado": "disponible",
-  "imagen": "/uploads/renault_clio.jpeg",
+      "imagen": "/uploads/renault_clio.jpeg",
       "id": "a3a8"
     }
   ]

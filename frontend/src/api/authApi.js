@@ -50,6 +50,19 @@ export const checkAdmin = async () => {
   }
 };
 
+// Compatibilidad: exportar registerUsuario si el componente lo importa
+export const registerUsuario = async (payload) => {
+  // intenta el endpoint más común; si falla prueba alternativa
+  try {
+    const res = await axios.post("/api/register", payload);
+    return res.data;
+  } catch (err) {
+    // si el primero falla, reintentar en /api/auth/register (algunos backends usan este path)
+    const res = await axios.post("/api/auth/register", payload);
+    return res.data;
+  }
+};
+
 
 //////////// PORQUE ESTE FICHERO Y NO LLAMAR DIRECTAMENTE A authController.js desde el frontend?
 
