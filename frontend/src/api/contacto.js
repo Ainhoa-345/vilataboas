@@ -1,7 +1,8 @@
 import axios from 'axios';
 
-// Endpoint para json-server (local). Ajusta si usas otro backend.
-const API_URL = 'http://localhost:3000/contacto';
+// Endpoint configurable: usa VITE_API_BASE o por defecto el backend Express en 5000
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000';
+const API_URL = `${API_BASE}/api/contacto`;
 
 /**
  * enviarContacto

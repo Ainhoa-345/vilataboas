@@ -1,5 +1,6 @@
 import express from "express";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { Resend } from "resend";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -14,6 +15,17 @@ if (process.env.GEMINI_API_KEY) {
   } catch (err) {
     console.warn('No se pudo inicializar Gemini AI:', err.message);
     genAI = null;
+  }
+}
+
+// Inicializar Resend (pasarela de correo) si hay API key
+let resend = null;
+if (process.env.RESEND_API_KEY) {
+  try {
+    resend = new Resend(process.env.RESEND_API_KEY);
+  } catch (err) {
+    console.warn('No se pudo inicializar Resend:', err.message);
+    resend = null;
   }
 }
 
@@ -73,6 +85,37 @@ router.post("/message", async (req, res) => {
       success: true,
       response: text,
     });
+
+    // Enviar notificación por correo al admin (si Resend está configurado)
+    const EMAIL_TO = process.env.EMAIL_TO || 'ainhoa.taboas@gmail.com';
+    if (resend && EMAIL_TO) {
+      (async () => {
+        try {
+          await resend.emails.send({
+            from: "Contacto <onboarding@resend.dev>",
+            to: [EMAIL_TO],
+            subject: `Nuevo mensaje de chat recibido`,
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #0d6efd;">Nuevo mensaje desde el chat</h2>
+                <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">
+                  <p><strong>Mensaje recibido:</strong></p>
+                  <p style="white-space: pre-wrap;">${message}</p>
+                </div>
+                <div style="margin: 20px 0;">
+                  <h3 style="color: #0d6efd;">Respuesta del asistente:</h3>
+                  <p style="white-space: pre-wrap;">${text}</p>
+                </div>
+                <hr style="margin: 30px 0; border: none; border-top: 1px solid #dee2e6;">
+                <p style="color: #6c757d; font-size: 12px;">Mensaje enviado desde el widget de chat del sitio.</p>
+              </div>
+            `,
+          });
+        } catch (err) {
+          console.error('Error enviando notificación por correo desde chatRoutes:', err.message || err);
+        }
+      })();
+    }
   } catch (error) {
     console.error("Error en el chat de Gemini:", error);
     res.status(500).json({

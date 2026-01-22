@@ -13,6 +13,7 @@ import articulosRoutes from "./articulosRoutes.js"; // ruta al router backend
 import authRouter from "./authRouter.js"; // ruta al router backend
 import chatRoutes from "./chatRoutes.js";
 import clientesRoutes from "./clientesRoutes.js";
+import contactoRoutes from "./contactoRoutes.js";
 
 dotenv.config();
 const app = express();
@@ -43,6 +44,7 @@ app.use("/api/articulos", articulosRoutes);
 app.use("/api/auth", authRouter);
 app.use("/api/chat", chatRoutes);
 app.use("/api/clientes", clientesRoutes);
+app.use("/api/contacto", contactoRoutes);
 
 // Verificar variable
 //console.log("MONGODB_URI =", process.env.MONGODB_URI);

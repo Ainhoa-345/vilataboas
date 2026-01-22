@@ -7,8 +7,18 @@ dotenv.config();
 
 const router = express.Router();
 
-// Inicializar Resend con la API Key
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Inicializar Resend con la API Key (tolerante si no está definida)
+let resend = null;
+if (process.env.RESEND_API_KEY) {
+    try {
+        resend = new Resend(process.env.RESEND_API_KEY);
+    } catch (err) {
+        console.warn('No se pudo inicializar Resend en contactoRoutes:', err.message);
+        resend = null;
+    }
+}
+// Email por defecto para notificaciones (usa .env si existe)
+const EMAIL_TO = process.env.EMAIL_TO || 'ainhoa.taboas@gmail.com';
 
 // Ruta POST para enviar correo
 router.post("/", async (req, res) => {
@@ -23,10 +33,17 @@ router.post("/", async (req, res) => {
     }
 
     try {
-        // Enviar correo con Resend
+        console.log('contactoRoutes: resend is', !!resend);
+        // Enviar correo con Resend (si está inicializado y la API está disponible)
+        if (!(resend && resend.emails && typeof resend.emails.send === 'function')) {
+            console.warn('Resend no está configurado o no dispone de .emails.send, no se enviará correo.');
+            console.log('Contacto recibido:', { nombre, email, asunto });
+            return res.status(200).json({ success: true, message: 'Contacto recibido (email no enviado: Resend no configurado)' });
+        }
+
         const { data, error } = await resend.emails.send({
             from: "Contacto <onboarding@resend.dev>",
-            to: [process.env.EMAIL_TO], // Tu email configurado en .env
+            to: [EMAIL_TO], // Tu email configurado en .env o fallback
             subject: `Nuevo mensaje de contacto: ${asunto}`,
             html: `
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">

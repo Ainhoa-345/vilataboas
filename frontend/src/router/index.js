@@ -10,7 +10,7 @@ import CitasTaller from "../components/CitasTaller.vue";
 import MoDelos from "../components/MoDelos.vue";
 import TablaLogin from "../components/TablaLogin.vue";
 import ContacTo from "../components/ContacTo.vue";
-import Buscar from "../components/BusCar.vue";
+import Buscar from "../components/Buscar.vue";
 import Cesta from "../components/Cesta.vue";
 
 const routes = [

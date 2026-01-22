@@ -37,6 +37,12 @@
         </ul>
       </div>
 
+      <form @submit.prevent="searchInternal" class="d-flex ms-3 me-2" role="search">
+        <input v-model="searchTerm" class="form-control form-control-sm me-2" type="search" placeholder="Buscar..." aria-label="Buscar" />
+        <button class="btn btn-outline-light btn-sm" type="submit" aria-label="Buscar interno"><i class="bi bi-search"></i></button>
+        <button type="button" class="btn btn-outline-light btn-sm ms-1" @click="searchWeb" aria-label="Buscar en la web"><i class="bi bi-globe"></i></button>
+      </form>
+
       <div class="dropdown ms-auto">
         <span class="text-white me-3" v-if="isLogueado">{{ userName }}</span>
 
@@ -71,6 +77,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { checkAdmin } from '@/api/authApi.js'
 import { useCestaStore } from '@/store/cesta'
 
@@ -79,6 +86,8 @@ const userName = ref('')
 const isAdmin = ref(false)
 const isMenuOpen = ref(false)
 const cestaStore = useCestaStore()
+const router = useRouter()
+const searchTerm = ref('')
 
 const totalItems = computed(() => cestaStore.totalItems)
 
@@ -101,6 +110,20 @@ function toggleMenu() {
       navbarCollapse.classList.remove('show')
     }
   }
+}
+
+function searchInternal() {
+  const termino = (searchTerm.value || '').trim()
+  // Navegar al componente Buscar (ruta /buscar) con query q
+  router.push({ path: '/buscar', query: { q: termino } })
+}
+
+function searchWeb() {
+  const termino = (searchTerm.value || '').trim()
+  const q = encodeURIComponent(termino)
+  // Abrir búsqueda en Google en nueva pestaña (busca en la web)
+  const url = `https://www.google.com/search?q=${q}`
+  window.open(url, '_blank')
 }
 
 function logout() {
