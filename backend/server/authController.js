@@ -49,13 +49,19 @@ export const checkAdmin = async (req, res) => {
         }
 
         // Intentar devolver info del usuario desde json-server para confirmar rol y nombre
-        const response = await axios.get(`http://localhost:3000/clientes?dni=${decoded.dni}`);
-        const user = response.data && response.data[0];
-        if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });
-
-        return res.json({ tipo: user.tipo || 'user', nombre: user.nombre || '' });
+        try {
+            const response = await axios.get(`http://localhost:3000/clientes?dni=${decoded.dni}`);
+            const user = response.data && response.data[0];
+            if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });
+            return res.json({ tipo: user.tipo || 'user', nombre: user.nombre || '' });
+        } catch (err) {
+            // Error al conectar o recibir respuesta desde json-server (servicio de datos)
+            console.error('Error consultando json-server en checkAdmin:', err.message || err);
+            // Devolver 502 Bad Gateway para indicar dependencia externa fallida
+            return res.status(502).json({ message: 'Servicio de datos no disponible' });
+        }
     } catch (error) {
-        console.error('Error en checkAdmin:', error.message || error);
+        console.error('Error en checkAdmin (unexpected):', error.message || error);
         res.status(500).json({ message: 'Error en el servidor' });
     }
 }

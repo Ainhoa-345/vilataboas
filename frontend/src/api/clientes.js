@@ -42,6 +42,11 @@ export const updateCliente = async (id, payload) => {
   return res.data;
 };
 
+export const patchCliente = async (id, payload) => {
+  const res = await axios.patch(`${BASE}/${encodeURIComponent(id)}`, payload);
+  return res.data;
+};
+
 export const deleteCliente = async (id) => {
   const res = await axios.delete(`${BASE}/${encodeURIComponent(id)}`);
   return res.data;

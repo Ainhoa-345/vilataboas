@@ -244,35 +244,39 @@
           <td class="text-center">{{ cliente.municipio }}</td>
           <td class="text-start">
 
-            <!-- Mostrar acciones SOLO para clientes activos cuando no estamos viendo histórico -->
-            <button
-              v-if="(cliente.historico === false || cliente.historico == null) && !mostrarHistorico"
-              @click="eliminarCliente(cliente.id)"
-              class="btn btn-danger btn-sm border-0 ms-4 me-2 shadow-none rounded-0"
-              title="Dar de baja (enviar a histórico)"
-            >
-              <i class="bi bi-trash"></i>
-            </button>
+            <div class="btn-group" role="group" aria-label="acciones-cliente">
+              <!-- Eliminar: visible y activo solo para clientes NO históricos.
+                   Usamos la clase 'invisible' para mantener el espacio y que el layout no salte -->
+              <button
+                @click="eliminarCliente(cliente.id)"
+                :class="['btn btn-danger btn-sm border-0 shadow-none rounded-0', cliente.historico === true ? 'invisible' : '']"
+                :disabled="cliente.historico === true"
+                title="Dar de baja (enviar a histórico)"
+              >
+                <i class="bi bi-trash"></i>
+              </button>
 
-            <button
-              v-if="(cliente.historico === false || cliente.historico == null) && !mostrarHistorico"
-              @click="editarCliente(cliente.id)"
-              class="btn btn-warning btn-sm shadow-none rounded-0"
-              title="Editar cliente"
-              aria-label="Editar cliente"
-            >
-              <i class="bi bi-pencil"></i>
-            </button>
+              <!-- Editar: disponible siempre -->
+              <button
+                @click="editarCliente(cliente.id)"
+                class="btn btn-warning btn-sm ms-2 shadow-none rounded-0"
+                title="Editar cliente"
+                aria-label="Editar cliente"
+              >
+                <i class="bi bi-pencil"></i>
+              </button>
 
-            <!-- Mostrar botón de reactivar SOLO cuando se está viendo el Histórico y el cliente está en histórico -->
-            <button
-              v-if="cliente.historico === true && mostrarHistorico"
-              @click="activarCliente(cliente)"
-              class="btn btn-secondary btn-sm ms-2 border-0 shadow-none rounded-0"
-              title="Activar cliente"
-            >
-              <i class="bi bi-person-check"></i>
-            </button>
+              <!-- Reactivar: visible y activo solo para clientes en histórico.
+                   Se muestra en la misma posición (misma btn-group) -->
+              <button
+                @click="activarCliente(cliente)"
+                :class="['btn btn-secondary btn-sm ms-2 shadow-none rounded-0', cliente.historico !== true ? 'invisible' : '']"
+                :disabled="cliente.historico !== true"
+                title="Activar cliente"
+              >
+                <i class="bi bi-person-check"></i>
+              </button>
+            </div>
            </td>
          </tr>
        </tbody>
@@ -307,7 +311,7 @@ import { ref, onMounted, computed, watch } from "vue";
 import { useRouter } from "vue-router";
 import provmuniData from "@/data/provmuni.json";
 import Swal from "sweetalert2";
-import { getClientes, deleteCliente, addCliente, updateCliente, getClientePorDni, getDni, getClienteLogueado } from "@/api/clientes.js";
+import { getClientes, deleteCliente, addCliente, updateCliente, patchCliente, getClientePorDni, getDni, getClienteLogueado } from "@/api/clientes.js";
 import { registerUsuario, loginUsuario, checkAdmin } from "@/api/authApi.js";
 
 const router = useRouter();
@@ -429,11 +433,10 @@ const cargarClientes = async () => {
     const data = await getClientes(mostrarHistorico.value);
     console.debug("Respuesta GET /api/clientes:", data);
     const raw = Array.isArray(data) ? data : [];
-    // Filtrar según el switch mostrarHistorico:
-    // - si mostrarHistorico está activo => mostrar SOLO los históricos (historico === true)
-    // - si está desactivado => mostrar solo activos (historico !== true)
+    // Si mostrarHistorico está activo: incluir también los históricos (mostrar todos).
+    // Si está desactivado: mostrar solo activos (no históricos).
     if (mostrarHistorico.value) {
-      clientes.value = raw.filter(c => c.historico === true || c.historico === 'true' || c.historico === 1 || c.historico === '1');
+      clientes.value = raw.slice();
     } else {
       clientes.value = raw.filter(c => !(c.historico === true || c.historico === 'true' || c.historico === 1 || c.historico === '1'));
     }
@@ -638,16 +641,14 @@ const activarCliente = async (cliente) => {
   if (!confirmacion.isConfirmed) return;
 
   try {
-    // Crear una copia del cliente con historico en true
-    const clienteActivado = { ...cliente, historico: false };
-
-    // Llamar a la API para actualizar
-    const actualizado = await updateCliente(cliente.id, clienteActivado);
+    // Hacemos PATCH solo del campo historico para evitar conflictos por duplicados
+    const actualizado = await patchCliente(cliente.id, { historico: false });
 
     // Actualizar la lista local (opcional, también puedes volver a cargar todo)
     const index = clientes.value.findIndex(c => c.id === cliente.id);
     if (index !== -1) {
-      clientes.value[index] = actualizado;
+      // conservar otros campos locales y actualizar solo historico
+      clientes.value[index] = { ...clientes.value[index], ...actualizado };
     }
 
     Swal.fire({
@@ -662,12 +663,19 @@ const activarCliente = async (cliente) => {
 
   } catch (error) {
     console.error('Error al reactivar cliente:', error);
-    Swal.fire({
-      icon: 'error',
-      title: 'Error al activar cliente',
-      text: 'Por favor, intenta de nuevo.',
-      timer: 1500
-    });
+    // Mostrar mensaje más informativo si es conflicto por duplicados
+    const status = error?.response?.status;
+    const data = error?.response?.data;
+    if (status === 409) {
+      const field = data?.field || 'campo';
+      const msg = data?.message || `Conflicto en ${field}`;
+      Swal.fire({ icon: 'error', title: 'No se puede reactivar', text: msg, timer: 2500 });
+    } else if (status === 502) {
+      Swal.fire({ icon: 'error', title: 'Servicio de datos no disponible', text: 'Inténtalo más tarde.', timer: 2500 });
+    } else {
+      Swal.fire({ icon: 'error', title: 'Error al activar cliente', text: 'Por favor, intenta de nuevo.', timer: 1500 });
+    }
+    return;
   }
 };
 

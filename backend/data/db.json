@@ -29,7 +29,7 @@
       "municipio": "Badalona",
       "fecha_alta": "2023-07-05",
       "tipo_cliente": "particular",
-      "historico": true,
+      "historico": false,
       "lopd": false,
       "password": "$2b$10$GsZ1GmrPDOTvC779k3DLdunlOk3Im2Zh2fQ97XvDQV1XA3pcXGe.G",
       "tipo": "user"
@@ -63,7 +63,7 @@
       "municipio": "Torrent",
       "fecha_alta": "2024-03-08",
       "tipo_cliente": "particular",
-      "historico": true,
+      "historico": false,
       "lopd": true,
       "password": "$2b$10$GsZ1GmrPDOTvC779k3DLdunlOk3Im2Zh2fQ97XvDQV1XA3pcXGe.G",
       "tipo": "user"
