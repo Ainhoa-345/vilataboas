@@ -12,7 +12,7 @@
       "municipio": "Alcalá de Henares",
       "fecha_alta": "2022-02-14",
       "tipo_cliente": "particular",
-      "historico": false,
+      "historico": true,
       "lopd": true,
       "password": "$2b$10$GsZ1GmrPDOTvC779k3DLdunlOk3Im2Zh2fQ97XvDQV1XA3pcXGe.G",
       "tipo": "user"
@@ -46,7 +46,7 @@
       "municipio": "Utrera",
       "fecha_alta": "2021-11-20",
       "tipo_cliente": "particular",
-      "historico": false,
+      "historico": true,
       "lopd": true,
       "password": "$2b$10$GsZ1GmrPDOTvC779k3DLdunlOk3Im2Zh2fQ97XvDQV1XA3pcXGe.G",
       "tipo": "user"
@@ -876,6 +876,7 @@
         "$date": "2025-09-15T00:00:00.000Z"
       },
       "estado": "vendido",
+      "matricula": "1234ABC",
       "id": "5c6a"
     },
     {
@@ -904,6 +905,7 @@
         "$date": "2025-08-10T00:00:00.000Z"
       },
       "estado": "disponible",
+      "matricula": "5678DEF",
       "id": "0f45"
     }
   ],
@@ -1062,6 +1064,7 @@
       },
       "estado": "vendido",
       "imagen": "/uploads/seat_leon.jpeg",
+      "matricula": "3456GHI",
       "id": "8fa4"
     },
     {
@@ -1092,6 +1095,7 @@
       },
       "estado": "disponible",
       "imagen": "/uploads/renault_clio.jpeg",
+      "matricula": "7890JKL",
       "id": "a3a8"
     }
   ]

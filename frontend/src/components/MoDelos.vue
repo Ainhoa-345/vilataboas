@@ -194,14 +194,61 @@
       </div>
 
     </form>
+  
+      <!-- TABLA DE VEHÍCULOS -->
+      <div class="table-responsive mt-4">
+        <h5 class="mb-3">Listado de Vehículos</h5>
+        <table class="table table-sm table-striped table-bordered align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Matrícula</th>
+              <th>Marca</th>
+              <th>Modelo</th>
+              <th class="text-center">Estado</th>
+              <th>Contacto</th>
+              <th class="text-center">Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(item, idx) in articulos" :key="item._id || item.id || idx">
+              <td>{{ item.matricula || '-' }}</td>
+              <td>{{ item.marca || '-' }}</td>
+              <td>{{ item.modelo || '-' }}</td>
+              <td class="text-center text-capitalize">
+                <span v-if="item.estado === 'disponible'" class="badge bg-success">Disponible</span>
+                <span v-else-if="item.estado === 'reservado'" class="badge bg-warning text-dark">Reservado</span>
+                <span v-else-if="item.estado === 'vendido'" class="badge bg-danger text-white">Vendido</span>
+                <span v-else class="badge bg-light text-dark">{{ item.estado || '-' }}</span>
+            </td>
+              <td>
+                <div>{{ (item.contacto && (item.contacto.nombre || item.contacto.telefono)) ? (item.contacto.nombre || '') + (item.contacto.telefono ? ' • ' + item.contacto.telefono : '') : '-' }}</div>
+                <div class="text-muted small">{{ item.contacto?.email || '' }}</div>
+              </td>
+              <td class="text-center">
+                <button
+                  @click="editarVehiculo(item)"
+                  class="btn btn-warning btn-sm ms-2 shadow-none rounded-0"
+                  title="Editar vehículo"
+                  aria-label="Editar vehículo"
+                >
+                  <i class="bi bi-pencil"></i>
+                </button>
+              </td>
+            </tr>
+            <tr v-if="articulos.length === 0">
+              <td colspan="6" class="text-center text-muted">No hay vehículos guardados.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
   </div>
 </template>
 
 
 <script setup>
 import Swal from "sweetalert2"
-import { ref, computed } from "vue"
-import { addArticulo } from "@/api/articulos.js"
+import { ref, computed, onMounted } from "vue"
+import { addArticulo, getArticulos, updateArticulo } from "@/api/articulos.js"
 import provmuniData from "@/data/provmuni.json"
 
 const vehiculo = ref({
@@ -230,7 +277,26 @@ const vehiculo = ref({
   estado: "disponible"
 })
 
+const imagenFile = ref(null);
+
 const editando = ref(false);
+const articuloEditandoId = ref(null);
+
+const articulos = ref([]);
+
+const cargarArticulos = async () => {
+  try {
+    const data = await getArticulos();
+    articulos.value = Array.isArray(data) ? data : [];
+  } catch (e) {
+    console.error('Error cargando articulos:', e);
+    articulos.value = [];
+  }
+};
+
+onMounted(() => {
+  cargarArticulos();
+});
 
 // Cargar provincias y municipios desde JSON
 const provincias = ref(provmuniData.provincias);
@@ -336,17 +402,22 @@ const guardarVehiculo = async () => {
   }
 
   try {
-    const nuevo = await addArticulo(vehiculo.value);
-    if (nuevo && nuevo._id) {
-      Swal.fire({
-        icon: "success",
-        title: "Vehículo guardado",
-        text: "El vehículo ha sido guardado correctamente.",
-        timer: 2000,
-        showConfirmButton: false
-      });
+    if (editando.value && articuloEditandoId.value) {
+      const actualizado = await updateArticulo(articuloEditandoId.value, vehiculo.value);
+      Swal.fire({ icon: 'success', title: 'Vehículo modificado', timer: 1500, showConfirmButton: false });
     } else {
-      console.error("Error al guardar el vehículo");
+      // Construir FormData esperado por el backend (campo 'vehiculo' y opcional 'imagen')
+      const formData = new FormData();
+      formData.append('vehiculo', JSON.stringify(vehiculo.value));
+      if (imagenFile.value) {
+        formData.append('imagen', imagenFile.value);
+      }
+      const nuevo = await addArticulo(formData);
+      if (nuevo && (nuevo._id || nuevo.id)) {
+        Swal.fire({ icon: 'success', title: 'Vehículo guardado', text: 'El vehículo ha sido guardado correctamente.', timer: 2000, showConfirmButton: false });
+      } else {
+        console.error('Error al guardar el vehículo');
+      }
     }
     Object.assign(vehiculo.value, {
       tipo: "",
@@ -371,10 +442,48 @@ const guardarVehiculo = async () => {
         email: ""
       },
       fecha_publicacion: ""
-    });
+  });
+
+  editando.value = false;
+  articuloEditandoId.value = null;
+  imagenFile.value = null;
+
+  await cargarArticulos();
 
   } catch (error) {
     console.error("Error al guardar:", error);
   }
+};
+
+// manejar selección de archivo
+const onFileChange = (event) => {
+  const file = event.target.files && event.target.files[0];
+  if (file) imagenFile.value = file;
+  else imagenFile.value = null;
+};
+
+// cargar datos de un vehículo en el formulario para editar
+const editarVehiculo = (item) => {
+  // Mapear campos (compatibilidad con distintos backends)
+  vehiculo.value = {
+    tipo: item.tipo || '',
+    matricula: item.matricula || '',
+    marca: item.marca || '',
+    modelo: item.modelo || '',
+    anio: item.anio || '',
+    estado: item.estado || 'disponible',
+    kilometros: item.kilometros || '',
+    precio: item.precio || '',
+    combustible: item.combustible || '',
+    transmision: item.transmision || '',
+    potencia_cv: item.potencia_cv || '',
+    descripcion: item.descripcion || '',
+    ubicacion: item.ubicacion || { provincia: '', ciudad: '' },
+    contacto: item.contacto || { nombre: '', telefono: '', email: '' },
+    fecha_publicacion: item.fecha_publicacion || ''
+  };
+  editando.value = true;
+  // intentar obtener id (mongo _id o json-server id)
+  articuloEditandoId.value = item._id || item.id || null;
 };
 </script>

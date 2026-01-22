@@ -249,7 +249,7 @@
                    Usamos la clase 'invisible' para mantener el espacio y que el layout no salte -->
               <button
                 @click="eliminarCliente(cliente.id)"
-                :class="['btn btn-danger btn-sm border-0 shadow-none rounded-0', cliente.historico === true ? 'invisible' : '']"
+                class="btn btn-danger btn-sm border-0 shadow-none rounded-0"
                 :disabled="cliente.historico === true"
                 title="Dar de baja (enviar a histórico)"
               >
@@ -270,7 +270,7 @@
                    Se muestra en la misma posición (misma btn-group) -->
               <button
                 @click="activarCliente(cliente)"
-                :class="['btn btn-secondary btn-sm ms-2 shadow-none rounded-0', cliente.historico !== true ? 'invisible' : '']"
+                class="btn btn-secondary btn-sm ms-2 shadow-none rounded-0"
                 :disabled="cliente.historico !== true"
                 title="Activar cliente"
               >
@@ -600,12 +600,25 @@ const eliminarCliente = async (id) => {
 
   // marcar como histórico (baja) en vez de borrar
   try {
-    // DAR DE BAJA => historico = true
-    await updateCliente(clienteAEliminar.id, { ...clienteAEliminar, historico: true });
+    // DAR DE BAJA => marcar solo el campo historico usando PATCH para evitar conflictos por duplicados
+    const actualizado = await patchCliente(clienteAEliminar.id, { historico: true });
+    // actualizar lista local
+    const idx = clientes.value.findIndex(c => c.id === clienteAEliminar.id);
+    if (idx !== -1) clientes.value[idx] = { ...clientes.value[idx], ...actualizado };
     await cargarClientes();
   } catch (error) {
     console.error('Error marcando histórico:', error);
-    Swal.fire({ icon: 'error', title: 'Error al eliminar cliente', timer: 1500 });
+    const status = error?.response?.status;
+    const data = error?.response?.data;
+    if (status === 409) {
+      const field = data?.field || 'campo';
+      const msg = data?.message || `Conflicto en ${field}`;
+      Swal.fire({ icon: 'error', title: 'No se puede eliminar', text: msg, timer: 2500 });
+    } else if (status === 502) {
+      Swal.fire({ icon: 'error', title: 'Servicio de datos no disponible', text: 'Inténtalo más tarde.', timer: 2500 });
+    } else {
+      Swal.fire({ icon: 'error', title: 'Error al eliminar cliente', timer: 1500 });
+    }
     return;
   }
 
