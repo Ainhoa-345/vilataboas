@@ -12,6 +12,7 @@ import TablaLogin from "../components/TablaLogin.vue";
 import ContacTo from "../components/ContacTo.vue";
 import Buscar from "../components/Buscar.vue";
 import Cesta from "../components/Cesta.vue";
+import Factura from "../components/Factura.vue";
 
 const routes = [
     {
@@ -60,6 +61,11 @@ const routes = [
         path: '/cesta',
         name: 'Cesta',
         component: Cesta
+    },
+    {
+        path: '/factura',
+        name: 'Factura',
+        component: Factura
     },
     {
         path: '/taller',

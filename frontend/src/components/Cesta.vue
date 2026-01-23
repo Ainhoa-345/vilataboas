@@ -40,12 +40,14 @@
       </div>
     </div>
   </div>
+  <PaymentModal v-if="showPayment" @close="onPagoCerrado" @financing="onPagoFinanciacion" @paid="onPagoRealizado" />
 </template>
 
 <script setup>
 import { useCestaStore } from '@/store/cesta'
 import { useRouter } from 'vue-router'
 import { computed, ref } from 'vue'
+import PaymentModal from './PaymentModal.vue'
 import placeholderImg from '@/assets/404.jpg'
 
 const cesta = useCestaStore()
@@ -58,6 +60,7 @@ const totalPrecio = computed(() => cesta.totalPrecio)
 
 const mensaje = ref('')
 let mensajeTimer = null
+const showPayment = ref(false)
 
 const resolveImagen = (ruta) => {
   if (!ruta) return placeholderImg;
@@ -91,11 +94,38 @@ function clearCesta(){
   mensajeTimer = setTimeout(() => mensaje.value = '', 2500)
 }
 function procederPago(){
-  // placeholder: redirigir a página de checkout o login
-  router.push('/')
+  // mostrar modal de pago si hay artículos
+  if (cesta.items.length === 0) {
+    mensaje.value = 'No hay artículos en la cesta'
+    clearTimeout(mensajeTimer)
+    mensajeTimer = setTimeout(() => mensaje.value = '', 2500)
+    return
+  }
+  showPayment.value = true
+}
+
+function onPagoCerrado(){
+  showPayment.value = false
+}
+
+function onPagoFinanciacion(){
+  // ir a la página de descarga de factura
+  showPayment.value = false
+  router.push('/factura')
+}
+
+function onPagoRealizado(payload){
+  // payload contiene { metodo, referencia }
+  showPayment.value = false
+  cesta.clearCesta()
+  mensaje.value = `Pago realizado (${payload.metodo}). Ref: ${payload.referencia}`
+  clearTimeout(mensajeTimer)
+  mensajeTimer = setTimeout(() => mensaje.value = '', 4000)
 }
 </script>
 
 <style scoped>
 img { border-radius:6px; }
 </style>
+
+

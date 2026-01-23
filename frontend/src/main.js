@@ -14,4 +14,10 @@ const pinia = createPinia()
 
 app.use(pinia)
 app.use(router)
+// intentar enriquecer la cesta en el arranque (migración automática)
+import { useCestaStore } from '@/store/cesta'
+const store = useCestaStore(pinia)
+// hydrateItems puede realizar peticiones; llamar sin await para no bloquear arranque
+store.hydrateItems().catch(err => console.warn('Error hydrating cesta', err))
+
 app.mount('#app')

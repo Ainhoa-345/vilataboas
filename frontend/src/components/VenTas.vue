@@ -175,6 +175,9 @@ const agregarACesta = (vehiculo) => {
         nombre: `${vehiculo.marca} ${vehiculo.modelo}`,
         precio: vehiculo.precio,
         imagen: urlImagen(vehiculo.imagen),
+        matricula: vehiculo.matricula || '',
+        anio: vehiculo.anio || vehiculo.anio || vehiculo.year || '',
+        kms: vehiculo.kilometros || vehiculo.kms || ''
     });
 };
 
