@@ -40,17 +40,15 @@
       <form @submit.prevent="searchInternal" class="d-flex ms-3 me-2" role="search">
         <input v-model="searchTerm" class="form-control form-control-sm me-2" type="search" placeholder="Buscar..." aria-label="Buscar" />
         <button class="btn btn-outline-light btn-sm" type="submit" aria-label="Buscar interno"><i class="bi bi-search"></i></button>
-        <button type="button" class="btn btn-outline-light btn-sm ms-1" @click="searchWeb" aria-label="Buscar en la web"><i class="bi bi-globe"></i></button>
       </form>
 
+  <!-- Cart icon linking to cesta (solo visible si hay sesión) -->
+  <router-link v-if="isLogueado" to="/cesta" class="text-white me-3 d-flex align-items-center cart-link" aria-label="Cesta de la compra">
+          <i class="bi bi-cart3 cart-icon" aria-hidden="true"></i>
+          <span v-if="totalItems > 0" class="badge bg-danger cart-badge">{{ totalItems }}</span>
+        </router-link>
       <div class="dropdown ms-auto">
         <span class="text-white me-3" v-if="isLogueado">{{ userName }}</span>
-
-        <!-- Cart icon linking to cesta -->
-        <router-link to="/cesta" class="text-white me-3 d-flex align-items-center cart-link" aria-label="Cesta de la compra">
-          <i class="bi bi-cart3 fs-4"></i>
-          <span v-if="totalItems > 0" class="badge bg-danger ms-1">{{ totalItems }}</span>
-        </router-link>
 
         <button class="btn btn-primary dropdown-toggle d-flex align-items-center" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Menú de usuario">
           <!-- User avatar icon (inline SVG) -->
@@ -118,21 +116,48 @@ function searchInternal() {
   router.push({ path: '/buscar', query: { q: termino } })
 }
 
-function searchWeb() {
-  const termino = (searchTerm.value || '').trim()
-  const q = encodeURIComponent(termino)
-  // Abrir búsqueda en Google en nueva pestaña (busca en la web)
-  const url = `https://www.google.com/search?q=${q}`
-  window.open(url, '_blank')
-}
 
 function logout() {
+  try {
+    // Preserve the current user's cesta so it is not lost on logout.
+    // Use DNI as stable identifier; fall back to token for compatibility.
+    const dni = sessionStorage.getItem('dni');
+    const token = sessionStorage.getItem('token');
+    const userId = dni || token;
+    if (userId && typeof localStorage !== 'undefined') {
+      const userKey = `cesta_${userId}`;
+      const userRaw = localStorage.getItem(userKey);
+
+      if (userRaw) {
+        // Only copy the user's cesta to guest if there is no guest cesta yet.
+        // Avoid merging/summing quantities to prevent duplicates when the user
+        // logs out and logs back in repeatedly (that would double counts).
+        const guestRaw = localStorage.getItem('cesta_guest');
+        if (!guestRaw) {
+          try {
+            localStorage.setItem('cesta_guest', userRaw);
+          } catch (e) {
+            console.warn('logout: error copying user cesta to guest', e);
+          }
+        } else {
+          // If guest cart already exists, do not merge to avoid repeated doubling.
+          // We intentionally leave guest cart untouched.
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('logout: error preserving cesta', e);
+  }
+
+  // Remove only session identifiers; do NOT delete localStorage cesta entries so user's cart persists
   sessionStorage.removeItem('token')
   sessionStorage.removeItem('userName')
+  sessionStorage.removeItem('dni')
 
   isLogueado.value = false
   userName.value = ''
 
+  // Refresh to reflect logout state
   window.location.href = '/'
 }
 </script>
@@ -154,7 +179,7 @@ function logout() {
   text-align: center;
 }
 
-.logo {
+  .logo {
   width: 45px;
 }
 
@@ -168,5 +193,70 @@ function logout() {
 .btn.btn-primary.dropdown-toggle .nav-user-icon {
   /* ensure icon contrasts on primary button */
   color: white;
+}
+
+/* Cart: make same size as user icon and position left of it */
+.cart-link {
+  /* Rounded square container behind the cart icon */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  min-height: 40px;
+  padding: 6px;
+  box-sizing: border-box;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.22);
+  background: rgba(255,255,255,0.04);
+  color: white;
+  position: relative;
+  margin-right: 0.3rem !important;
+  transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.05);
+}
+
+.cart-link:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.12);
+  background: rgba(255,255,255,0.06);
+}
+
+.cart-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  font-size: 18px;
+  color: white;
+}
+
+.cart-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  transform: translate(50%, -50%);
+  font-size: 0.65rem;
+  padding: 0;
+  border-radius: 50%;
+  min-width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #ff3b30; /* bright red */
+  color: white;
+  border: 2px solid white; /* small white border to separate from blue background */
+}
+
+@media (max-width: 576px) {
+  .cart-link {
+    min-width: 36px;
+    min-height: 36px;
+    padding: 4px;
+    margin-right: 0.2rem !important;
+  }
+  .cart-icon { width: 20px; height: 20px; font-size: 16px }
+  .cart-badge { min-width: 16px; height: 16px; font-size: 0.6rem }
 }
 </style>

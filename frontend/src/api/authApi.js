@@ -54,12 +54,30 @@ export const checkAdmin = async () => {
 export const registerUsuario = async (payload) => {
   // intenta el endpoint más común; si falla prueba alternativa
   try {
-    const res = await axios.post("/api/register", payload);
+    // Preferir crear cliente en el endpoint de clientes (backend proxy to json-server)
+    const res = await axios.post("/api/clientes", payload);
     return res.data;
   } catch (err) {
-    // si el primero falla, reintentar en /api/auth/register (algunos backends usan este path)
-    const res = await axios.post("/api/auth/register", payload);
-    return res.data;
+    // If the request to /api/clientes returned a validation error (400) or a
+    // conflict (409), rethrow so the caller can surface the field-specific
+    // message. Only attempt fallbacks when the endpoint itself wasn't found (404)
+    // or there was a network error.
+    if (err && err.response && err.response.status && err.response.status !== 404) {
+      // rethrow validation/conflict/other server errors to be handled by the caller
+      throw err;
+    }
+
+    // si falla crear en /api/clientes por 404 (ruta no encontrada) o error de red,
+    // intentar rutas alternativas usadas por otros despliegues
+    try {
+      const res2 = await axios.post("/api/register", payload);
+      return res2.data;
+    } catch (err2) {
+      // si tampoco existe /api/register, probar /api/auth/register y dejar que
+      // cualquier error suba al llamador para mostrar mensajes adecuados.
+      const res3 = await axios.post("/api/auth/register", payload);
+      return res3.data;
+    }
   }
 };
 

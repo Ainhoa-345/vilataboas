@@ -4,9 +4,23 @@ import { getArticuloById, getArticulos } from '@/api/articulos'
 export const useCestaStore = defineStore('cesta', {
     state: () => ({
         // cargar saved items desde localStorage para persistencia across refresh
-        items: typeof localStorage !== 'undefined' && localStorage.getItem('cesta')
-            ? JSON.parse(localStorage.getItem('cesta'))
-            : []
+        // ahora la cesta se guarda por usuario en localStorage. La clave depende del token de sesión
+        items: (function(){
+            try{
+                if (typeof localStorage === 'undefined') return [];
+                // Use DNI as stable user identifier for the cesta key. Fall back to token
+                // for compatibility with older sessions.
+                const dni = sessionStorage.getItem('dni');
+                const token = sessionStorage.getItem('token');
+                const userId = dni || token;
+                const userKey = userId ? `cesta_${userId}` : 'cesta_guest';
+                const raw = localStorage.getItem(userKey);
+                return raw ? JSON.parse(raw) : [];
+            }catch(e){
+                console.warn('Error leyendo cesta desde localStorage', e);
+                return [];
+            }
+        })()
     }),
 
     getters: {
@@ -102,7 +116,13 @@ export const useCestaStore = defineStore('cesta', {
         // guardar estado actual en localStorage
         save() {
             try {
-                localStorage.setItem('cesta', JSON.stringify(this.items));
+                // Persistir la cesta usando DNI si está disponible (clave estable por usuario).
+                // Se mantiene compatibilidad con sesiones antiguas usando token como fallback.
+                const dni = sessionStorage.getItem('dni');
+                const token = sessionStorage.getItem('token');
+                const userId = dni || token;
+                const userKey = userId ? `cesta_${userId}` : 'cesta_guest';
+                localStorage.setItem(userKey, JSON.stringify(this.items));
             } catch (e) {
                 // si falla (por ejemplo storage no disponible), no rompemos la app
                 console.warn('No se pudo guardar la cesta en localStorage', e);

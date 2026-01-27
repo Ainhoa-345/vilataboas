@@ -22,7 +22,7 @@
             </button>
 
             <div v-if="!dniValido" class="invalid-feedback">
-              DNI o NIE inválido.
+              {{ dniError || 'DNI o NIE inválido.' }}
             </div>
           </div>
         </div>
@@ -43,13 +43,7 @@
           <input type="date" id="fecha_alta" v-model="nuevoCliente.fecha_alta" class="form-control w-auto" required
             oninvalid="this.setCustomValidity('Por favor, rellene este campo')" oninput="this.setCustomValidity('')" />
 
-          <!-- Botón recargar -->
-          <div class="col-md-1 ms-auto d-flex align-items-center me-3">
-            <button type="button" class="btn btn btn-primary me-4 border-0 shadow-none rounded-0"
-              @click="refrescarPagina" title="Refrescar Página">
-              <i class="bi bi-arrow-clockwise"></i>
-            </button>
-          </div>
+          <!-- Botón recargar eliminado (removed curved-arrow refresh button) -->
         </div>
       </div>
 
@@ -163,8 +157,8 @@
             </div>
           </div>
 
-          <!-- Histórico (derecha) -->
-          <div class="ms-auto me-5">
+          <!-- Histórico (derecha) - solo visible para admins -->
+          <div v-if="admin" class="ms-auto me-5">
             <div class="form-switch d-flex align-items-center">
               <input type="checkbox" id="historico" v-model="mostrarHistorico" class="form-check-input me-2"
                 @change="cargarClientes" />
@@ -174,9 +168,12 @@
         </div>
       </div>
       <!-- Botón centrado (centro) -->
-      <div class="d-flex justify-content-center align-items-center">
+      <div class="d-flex justify-content-center align-items-center gap-3">
         <button type="submit" class="btn btn-primary border-0 shadow-none rounded-0">
           {{ editando ? "Modificar Cliente" : "Guardar" }}
+        </button>
+        <button id="vaciarBtn" type="button" class="btn btn-secondary border-0 shadow-none rounded-0" @click="clearClicked">
+          Vaciar
         </button>
       </div>
     </form>
@@ -266,12 +263,11 @@
                 <i class="bi bi-pencil"></i>
               </button>
 
-              <!-- Reactivar: visible y activo solo para clientes en histórico.
-                   Se muestra en la misma posición (misma btn-group) -->
+              <!-- Reactivar: visible SOLO cuando el modo 'Histórico' está activado y el cliente está en histórico -->
               <button
+                v-if="mostrarHistorico && (cliente.historico === true || cliente.historico === 'true' || cliente.historico === 1)"
                 @click="activarCliente(cliente)"
                 class="btn btn-secondary btn-sm ms-2 shadow-none rounded-0"
-                :disabled="cliente.historico !== true"
                 title="Activar cliente"
               >
                 <i class="bi bi-person-check"></i>
@@ -307,7 +303,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from "vue";
+import { ref, onMounted, onUnmounted, computed, watch } from "vue";
 import { useRouter } from "vue-router";
 import provmuniData from "@/data/provmuni.json";
 import Swal from "sweetalert2";
@@ -392,7 +388,26 @@ onMounted(async () => {
     clientes.value = [];
     numClientes.value = 0;
   }
+
+  // Attach a native click listener to the Vaciar button for debugging overlay/binding issues
+  try {
+    const vaciarEl = document.getElementById('vaciarBtn');
+    if (vaciarEl) {
+      vaciarEl.addEventListener('click', onNativeVaciarClick);
+    }
+  } catch (e) {
+    console.debug('onMounted: failed to attach native listener', e);
+  }
 })
+
+onUnmounted(() => {
+  try {
+    const vaciarEl = document.getElementById('vaciarBtn');
+    if (vaciarEl) vaciarEl.removeEventListener('click', onNativeVaciarClick);
+  } catch (e) {
+    console.debug('onUnmounted: failed to remove native listener', e);
+  }
+});
 
 const updateTabla = async () => {
   try {
@@ -559,10 +574,43 @@ const guardarCliente = async () => {
 
   } catch (error) {
     console.error('Error al guardar cliente:', error);
+
+    // Manejo específico de errores de validación/duplicados devueltos por el backend
+    const status = error?.response?.status;
+    const data = error?.response?.data || {};
+
+    if (status === 409) {
+      // Conflicto por duplicado: backend devuelve { message, field }
+      const field = data.field || null;
+      const msg = data.message || 'Campo duplicado';
+
+      // Marcar visualmente el campo como inválido si es uno de los esperados
+      if (field === 'dni') dniValido.value = false;
+      if (field === 'dni') dniError.value = msg;
+      if (field === 'email') emailValido.value = false;
+      if (field === 'movil') movilValido.value = false;
+
+      Swal.fire({ icon: 'error', title: 'Conflicto', text: msg, timer: 3000, showConfirmButton: false });
+      return;
+    }
+
+    // Errores de validación del servidor (400) con detalles
+    if (status === 400 && data && data.field) {
+      const field = data.field;
+      const msg = data.message || 'Error en campo';
+      if (field === 'dni') dniValido.value = false;
+      if (field === 'dni') dniError.value = msg;
+      if (field === 'email') emailValido.value = false;
+      if (field === 'movil') movilValido.value = false;
+      Swal.fire({ icon: 'error', title: 'Error de validación', text: msg, timer: 3000, showConfirmButton: false });
+      return;
+    }
+
+    // Otros errores: mostrar mensaje por defecto
     Swal.fire({
       icon: 'error',
       title: 'Error al guardar cliente',
-      text: error?.response?.data?.message || error.message || 'Inténtelo de nuevo o contacte con el administrador.',
+      text: data?.message || error.message || 'Inténtelo de nuevo o contacte con el administrador.',
       showConfirmButton: false,
       timer: 3000
     });
@@ -750,20 +798,67 @@ const buscarClientePorDNI = async (dni) => {
   }
 }
 const vaciarFormulario = async () => {
-  nuevoCliente.value = { ...clienteVacio };
+  // Debug log to confirm handler execution
+  console.debug('vaciarFormulario: clearing form');
+
+  // Reset the whole object in one go to ensure v-model bindings are cleared.
+  // Include both `tipoCliente` (used by the form) and `tipo_cliente` (used by backend)
+  nuevoCliente.value = {
+    ...clienteVacio,
+    tipoCliente: 'particular',
+    tipo_cliente: clienteVacio.tipo_cliente || '',
+  };
+
+  // Clear auxiliar UI state
   repetirPassword.value = "";
   editando.value = false;
   clienteEditandoId.value = null;
+  municipiosFiltrados.value = [];
 
+  // Reset validation flags/messages
   dniValido.value = true;
   movilValido.value = true;
   emailValido.value = true;
+  dniError.value = "";
+
+  // Small confirmation so the user sees the action executed
+  try {
+    Swal.fire({
+      icon: 'success',
+      title: 'Formulario vaciado',
+      timer: 900,
+      showConfirmButton: false,
+      toast: true,
+      position: 'top-end'
+    });
+  } catch (e) {
+    // noop if Swal isn't available for any reason
+    console.debug('vaciarFormulario: Swal not available', e);
+  }
+}
+
+// Wrapper click handler for the Vaciar button so we can detect click events
+const clearClicked = (event) => {
+  console.debug('clearClicked: Vaciar button clicked', event);
+  try {
+    // call the async reset function but don't await here (it's fine either way)
+    vaciarFormulario();
+  } catch (e) {
+    console.error('clearClicked: error calling vaciarFormulario', e);
+  }
+};
+
+// Native listener function used only for debugging to detect click events
+function onNativeVaciarClick(ev) {
+  console.debug('onNativeVaciarClick: native DOM click detected', ev);
 }
 
 /* =================================== SCRIPT AUXILIARES =================================== */
 
 // Estado de validez del DNI/NIE si la estructura de datos es más compleja se usa reactive
 const dniValido = ref(true); // Por defecto es válido y no muestra error al iniciar
+// Mensaje de error detallado para el campo DNI (se muestra cuando dniValido === false)
+const dniError = ref("");
 
 // Función para validar DNI y NIE
 const validarDniNie = (valor) => {
@@ -786,10 +881,50 @@ const validarDniNie = (valor) => {
   return false;
 };
 
-// Validar al salir del campo
+// Validar al salir del campo con mensajes específicos
 const validarDni = () => {
-  const dni = nuevoCliente.value.dni.trim().toUpperCase();
-  dniValido.value = validarDniNie(dni);
+  const dni = (nuevoCliente.value.dni || "").trim().toUpperCase();
+
+  // Reiniciar mensaje
+  dniError.value = "";
+
+  if (!dni) {
+    dniValido.value = false;
+    dniError.value = 'El DNI está vacío.';
+    return;
+  }
+
+  const dniRegex = /^[0-9]{8}[A-Z]$/;
+  const nieRegex = /^[XYZ][0-9]{7}[A-Z]$/;
+
+  // Formato básico
+  if (!dniRegex.test(dni) && !nieRegex.test(dni)) {
+    dniValido.value = false;
+    dniError.value = 'Formato inválido. Debe ser 8 dígitos + letra (DNI) o empezar por X/Y/Z para NIE.';
+    return;
+  }
+
+  // Si el formato es correcto, comprobar la letra
+  const letras = "TRWAGMYFPDXBNJZSQVHLCKE";
+  let numeroStr = dni.slice(0, 8);
+  // Para NIE, sustituir la letra inicial por su valor numérico
+  if (/^[XYZ]/.test(dni)) {
+    numeroStr = dni.replace('X', '0').replace('Y', '1').replace('Z', '2').slice(0, 8);
+  }
+
+  const numero = parseInt(numeroStr, 10);
+  const letraEsperada = letras[numero % 23];
+  const letraReal = dni.charAt(8);
+
+  if (letraEsperada !== letraReal) {
+    dniValido.value = false;
+    dniError.value = `Letra incorrecta. La letra esperada para ese número es ${letraEsperada}.`;
+    return;
+  }
+
+  // Si todo pasa
+  dniValido.value = true;
+  dniError.value = "";
 };
 
 // Función única: capitaliza y asigna en el mismo paso

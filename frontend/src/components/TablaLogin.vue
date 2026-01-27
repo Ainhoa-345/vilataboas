@@ -86,6 +86,106 @@ export default {
         sessionStorage.setItem('token', data.token);
         sessionStorage.setItem('userName', data.nombre);
 
+        // Extraer DNI desde el payload del JWT y guardarlo como identificador estable
+        try {
+          if (data.token) {
+            const parts = data.token.split('.');
+            if (parts.length >= 2) {
+              const payload = JSON.parse(atob(parts[1]));
+              if (payload && payload.dni) {
+                sessionStorage.setItem('dni', payload.dni);
+              }
+            }
+          }
+        } catch (e) {
+          console.warn('No se pudo parsear el token para extraer DNI:', e);
+        }
+
+        // Migración compatibilidad: si hay una cesta guardada con la clave antigua basada en token
+        // (cesta_<token>), fusionarla en la nueva clave basada en DNI (cesta_<dni>) y eliminar la antigua.
+        try {
+          const tokenOld = data.token;
+          const dniForKey = sessionStorage.getItem('dni');
+          if (tokenOld && dniForKey && typeof localStorage !== 'undefined') {
+            const oldKey = `cesta_${tokenOld}`;
+            const newKey = `cesta_${dniForKey}`;
+            if (oldKey !== newKey) {
+              const oldRaw = localStorage.getItem(oldKey);
+              if (oldRaw) {
+                try {
+                  const oldItems = JSON.parse(oldRaw || '[]');
+                  const newRawExisting = localStorage.getItem(newKey);
+                  const newItemsExisting = newRawExisting ? JSON.parse(newRawExisting || '[]') : [];
+                  // merge oldItems into newItemsExisting
+                  const map = new Map();
+                  for (const it of newItemsExisting) {
+                    if (!it || !it.id) continue;
+                    map.set(it.id, { ...it });
+                  }
+                  for (const it of oldItems) {
+                    if (!it || !it.id) continue;
+                    if (map.has(it.id)) {
+                      const ex = map.get(it.id);
+                      ex.cantidad = (ex.cantidad || 0) + (it.cantidad || 0);
+                      map.set(it.id, ex);
+                    } else {
+                      map.set(it.id, { ...it });
+                    }
+                  }
+                  const merged = Array.from(map.values());
+                  localStorage.setItem(newKey, JSON.stringify(merged));
+                } catch (e) {
+                  // parsing error: fallback to moving the raw value
+                  localStorage.setItem(newKey, oldRaw);
+                }
+                // remove old key after migration
+                try { localStorage.removeItem(oldKey); } catch (e) { /* noop */ }
+              }
+            }
+          }
+        } catch (e) {
+          console.warn('Error migrando cesta basada en token a cesta basada en dni:', e);
+        }
+
+        // Fusionar la cesta de invitado (cesta_guest) en la cesta del usuario (cesta_<dni>)
+        try {
+          const dni = sessionStorage.getItem('dni');
+          if (dni && typeof localStorage !== 'undefined') {
+            const userKey = `cesta_${dni}`;
+            const guestRaw = localStorage.getItem('cesta_guest');
+            const userRaw = localStorage.getItem(userKey);
+
+            const guestItems = guestRaw ? JSON.parse(guestRaw || '[]') : [];
+            const userItems = userRaw ? JSON.parse(userRaw || '[]') : [];
+
+            // Build map from userItems
+            const map = new Map();
+            for (const it of userItems) {
+              if (!it || !it.id) continue;
+              map.set(it.id, { ...it });
+            }
+            // Merge guest items, summing quantities
+            for (const it of guestItems) {
+              if (!it || !it.id) continue;
+              if (map.has(it.id)) {
+                const existing = map.get(it.id);
+                existing.cantidad = (existing.cantidad || 0) + (it.cantidad || 0);
+                map.set(it.id, existing);
+              } else {
+                map.set(it.id, { ...it });
+              }
+            }
+
+            const merged = Array.from(map.values());
+            localStorage.setItem(userKey, JSON.stringify(merged));
+
+            // Eliminar la cesta_guest para evitar duplicados futuros
+            try { localStorage.removeItem('cesta_guest'); } catch (e) { /* noop */ }
+          }
+        } catch (e) {
+          console.warn('Error al fusionar cesta guest en user:', e);
+        }
+
         Swal.fire({
           title: "Bienvenido",
           text: `Hola ${data.nombre}`,
