@@ -12,9 +12,12 @@ const API_URL = `${API_BASE}/api/contacto`;
 export const enviarContacto = async (form) => {
   try {
     const res = await axios.post(API_URL, form);
-    return { success: true, data: res.data };
+    // Devolver exactamente lo que responde el backend (ej: { success: true, ... } )
+    return res.data;
   } catch (error) {
     console.error('Error en enviarContacto:', error);
-    return { success: false, error };
+    // Si el servidor devolvió un body con info, lanzarlo para que el componente lo capture
+    if (error.response && error.response.data) throw error.response.data
+    throw error
   }
 };

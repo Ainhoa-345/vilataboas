@@ -7,22 +7,26 @@ dotenv.config();
 
 const router = express.Router();
 
-// Inicializar Resend con la API Key (tolerante si no está definida)
+// Inicializar Resend solo si hay API key
 let resend = null;
 if (process.env.RESEND_API_KEY) {
     try {
         resend = new Resend(process.env.RESEND_API_KEY);
     } catch (err) {
-        console.warn('No se pudo inicializar Resend en contactoRoutes:', err.message);
+        console.warn('No se pudo inicializar Resend:', err.message || err);
         resend = null;
     }
+} else {
+    console.log('contactoRoutes: resend is false');
+    console.log('Resend no está configurado o no dispone de .emails.send, no se enviará correo.');
 }
-// Email por defecto para notificaciones (usa .env si existe)
-const EMAIL_TO = process.env.EMAIL_TO || 'ainhoa.taboas@gmail.com';
 
 // Ruta POST para enviar correo
 router.post("/", async (req, res) => {
     const { nombre, email, asunto, mensaje } = req.body;
+
+    // Log de entrada para depuración rápida
+    console.log('contactoRoutes POST recibido - resend disponible:', !!resend, 'RESEND_API_KEY present:', !!process.env.RESEND_API_KEY ? `${process.env.RESEND_API_KEY.slice(0,6)}***` : 'unset');
 
     // Validar campos
     if (!nombre || !email || !asunto || !mensaje) {
@@ -33,17 +37,19 @@ router.post("/", async (req, res) => {
     }
 
     try {
-        console.log('contactoRoutes: resend is', !!resend);
-        // Enviar correo con Resend (si está inicializado y la API está disponible)
-        if (!(resend && resend.emails && typeof resend.emails.send === 'function')) {
-            console.warn('Resend no está configurado o no dispone de .emails.send, no se enviará correo.');
-            console.log('Contacto recibido:', { nombre, email, asunto });
-            return res.status(200).json({ success: true, message: 'Contacto recibido (email no enviado: Resend no configurado)' });
+        // Si Resend no está configurado, no enviar correo y devolver respuesta informativa
+        if (!resend) {
+            console.log('Contacto recibido:', { nombre, email, asunto, mensaje });
+            return res.status(200).json({
+                success: true,
+                message: 'Correo NO enviado: Resend no configurado en el servidor (modo desarrollo). Revisa RESEND_API_KEY en .env',
+            });
         }
 
-        const { data, error } = await resend.emails.send({
-            from: "Contacto <onboarding@resend.dev>",
-            to: [EMAIL_TO], // Tu email configurado en .env o fallback
+        // Enviar correo con Resend
+        const sendResult = await resend.emails.send({
+            from: process.env.EMAIL_FROM || "Contacto <onboarding@resend.dev>",
+            to: [process.env.EMAIL_TO], // Tu email configurado en .env
             subject: `Nuevo mensaje de contacto: ${asunto}`,
             html: `
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -65,20 +71,23 @@ router.post("/", async (req, res) => {
             `,
         });
 
-        if (error) {
-            console.error("Error al enviar correo:", error);
+        // Registrar la respuesta completa para depuración
+        console.log('Resend send result:', sendResult);
+
+        // El SDK puede devolver error en diferentes formas; comprobar y devolver info útil
+        if (sendResult && sendResult.error) {
+            console.error("Error al enviar correo (Resend):", sendResult.error);
             return res.status(400).json({ 
                 success: false, 
                 message: "Error al enviar el correo",
-                error: error.message 
+                error: sendResult.error 
             });
         }
 
-        console.log("Correo enviado exitosamente:", data);
         res.status(200).json({ 
             success: true, 
             message: "Correo enviado correctamente",
-            data 
+            data: sendResult 
         });
 
     } catch (error) {
