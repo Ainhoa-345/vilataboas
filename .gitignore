@@ -22,3 +22,20 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment files (secrets)
+.env
+/backend/.env
+
+# Local env overrides
+/backend/.env.local
+/frontend/.env.local
+
+# Optional: lockfiles / build outputs
+node_modules/
+dist/
+build/
+
+# Logs
+*.log
+backend_server.log
