@@ -52,12 +52,12 @@
 
         <button class="btn btn-primary dropdown-toggle d-flex align-items-center" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Menú de usuario">
           <!-- User avatar icon (inline SVG) -->
-          <svg class="nav-user-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <svg class="nav-user-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" @click="goPerfil" style="cursor: pointer;">
             <circle cx="12" cy="8" r="3.2" fill="currentColor" />
             <path d="M4 20c0-3.3 2.7-6 6-6h4c3.3 0 6 2.7 6 6v1H4v-1z" fill="currentColor" opacity="0.9" />
           </svg>
         </button>
-        <ul class="dropdown-menu dropdown-menu-end">
+  <ul class="dropdown-menu dropdown-menu-end">
           <!-- Mostra “Acceso/Registro” se NON hai usuario logueado -->
           <li v-if="!isLogueado"><router-link class="dropdown-item" to="/login">Acceso</router-link></li>
           <li v-if="!isLogueado"><router-link class="dropdown-item" to="/clientes">Registro</router-link></li>
@@ -65,7 +65,7 @@
           <li v-if="isLogueado">
             <a class="dropdown-item" href="#" @click.prevent="logout">Cerrar Sesión</a>
           </li>
-          <li v-if="isLogueado"><router-link class="dropdown-item" to="/clientes">Perfil</router-link></li>
+          <li v-if="isLogueado"><router-link class="dropdown-item" to="/perfil">Perfil</router-link></li>
         </ul>
       </div>
       
@@ -159,6 +159,15 @@ function logout() {
 
   // Refresh to reflect logout state
   window.location.href = '/'
+}
+
+function goPerfil() {
+  // Navegar a la página de edición de perfil
+  try {
+    router.push('/perfil');
+  } catch (e) {
+    console.warn('goPerfil: error navegando a /perfil', e);
+  }
 }
 </script>
 

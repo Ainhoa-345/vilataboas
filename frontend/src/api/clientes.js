@@ -28,7 +28,10 @@ export const getClientePorMovil = async (movil) => {
 };
 
 export const getClienteLogueado = async () => {
-  const res = await axios.get(`${BASE}/logueado`);
+  const token = sessionStorage.getItem('token');
+  const headers = {};
+  if (token) headers.Authorization = `Bearer ${token}`;
+  const res = await axios.get(`${BASE}/logueado`, { headers });
   return res.data;
 };
 

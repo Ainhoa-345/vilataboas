@@ -590,10 +590,10 @@
       "municipio": "Vigo",
       "fecha_alta": "2026-01-13",
       "historico": true,
-      "tipoCliente": "",
       "lopd": true,
       "password": "$2a$10$isInp.0VibiAME8U2oOaEOat0IgW1sH/P65C7MTszegrukkXVrMLq",
-      "tipo": "admin"
+      "tipo": "admin",
+      "tipo_cliente": ""
     },
     {
       "id": "6740",
@@ -608,7 +608,8 @@
       "municipio": "Zamora",
       "fecha_alta": "2026-01-27",
       "lopd": true,
-      "tipo": "user"
+      "tipo": "user",
+      "tipo_cliente": ""
     }
   ],
   "noticias": [

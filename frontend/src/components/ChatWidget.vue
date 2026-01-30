@@ -182,7 +182,7 @@
   border: none;
   cursor: pointer;
 }
-.modern-toggle .chat-icon{ width:32px; height:32px }
+.modern-toggle .chat-icon{ width:40px; height:40px }
 
 .chat-window{
   right: 22px;
@@ -203,7 +203,7 @@
   background: linear-gradient(90deg,#6D28D9 0%,#8B5CF6 100%);
   color: #fff;
 }
-.header-logo{ width:40px; height:40px; border-radius:8px; background:#fff; padding:6px }
+.header-logo{ width:56px; height:56px; border-radius:10px; background:#fff; padding:8px }
 .header-title .title{ font-weight:700 }
 .header-title .subtitle{ font-size:12px; opacity:0.9 }
 

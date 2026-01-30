@@ -13,6 +13,7 @@ import ContacTo from "../components/ContacTo.vue";
 import Buscar from "../components/Buscar.vue";
 import Cesta from "../components/Cesta.vue";
 import Factura from "../components/Factura.vue";
+import Perfil from "../components/Perfil.vue";
 
 const routes = [
     {
@@ -34,6 +35,12 @@ const routes = [
         path: '/clientes',
         name: 'GestionClientes',
         component: GestionClientes
+    },
+    {
+        path: '/perfil',
+        name: 'Perfil',
+        component: Perfil,
+        meta: { requiresAuth: true }
     },
     {
         path: '/noticias',
