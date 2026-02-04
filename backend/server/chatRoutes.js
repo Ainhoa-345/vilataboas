@@ -44,42 +44,57 @@ router.post("/message", async (req, res) => {
       return res.json({ success: true, response: fallback });
     }
 
-    // Usar el modelo Gemini 2.5 Flash (rápido y con mejores límites de cuota)
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+  // Envolver la creación del modelo, la inicialización del chat y la petición
+    // en un único try/catch para capturar errores que puedan ocurrir en cualquiera
+    // de esos pasos (p. ej. clave inválida, 403, errores de cuota, etc.).
+  let text;
+  console.log('chatRoutes: iniciando flujo Gemini para mensaje:', message ? message.slice(0,50) : '<empty>');
+  try {
+      // Usar el modelo Gemini 2.5 Flash (rápido y con mejores límites de cuota)
+      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-    // Configurar el contexto del chat si hay historial
-    let chat;
-    if (history && history.length > 0) {
-      // Convertir el historial al formato de Gemini
-      const formattedHistory = history.map((msg) => ({
-        role: msg.role === "user" ? "user" : "model",
-        parts: [{ text: msg.content }],
-      }));
+      // Configurar el contexto del chat si hay historial
+      let chat;
+      if (history && history.length > 0) {
+        // Convertir el historial al formato de Gemini
+        const formattedHistory = history.map((msg) => ({
+          role: msg.role === "user" ? "user" : "model",
+          parts: [{ text: msg.content }],
+        }));
 
-      chat = model.startChat({
-        history: formattedHistory,
-        generationConfig: {
-          maxOutputTokens: 1000,
-          temperature: 0.9,
-          topP: 1,
-          topK: 40,
-        },
-      });
-    } else {
-      chat = model.startChat({
-        generationConfig: {
-          maxOutputTokens: 1000,
-          temperature: 0.9,
-          topP: 1,
-          topK: 40,
-        },
-      });
+        chat = model.startChat({
+          history: formattedHistory,
+          generationConfig: {
+            maxOutputTokens: 1000,
+            temperature: 0.9,
+            topP: 1,
+            topK: 40,
+          },
+        });
+      } else {
+        chat = model.startChat({
+          generationConfig: {
+            maxOutputTokens: 1000,
+            temperature: 0.9,
+            topP: 1,
+            topK: 40,
+          },
+        });
+      }
+
+      // Enviar el mensaje y obtener la respuesta
+      const result = await chat.sendMessage(message);
+      const response = await result.response;
+      text = response.text();
+    } catch (err) {
+      // Si la llamada a Gemini falla por cualquier motivo (clave inválida, 403, cuota, etc.)
+      // no devolvemos 500 al frontend: enviamos un fallback amigable y registramos el error.
+      console.error('Error llamando a Gemini desde /api/chat/message:', err?.message || err);
+      const fallback = `Hola, gracias por tu mensaje: "${message}".\n\nNo puedo conectar con el asistente ahora mismo. Inténtalo más tarde.`;
+      return res.json({ success: true, response: fallback });
     }
 
-    // Enviar el mensaje y obtener la respuesta
-    const result = await chat.sendMessage(message);
-    const response = await result.response;
-    const text = response.text();
+    console.log('chatRoutes: Gemini respondió correctamente (o se consiguió texto)');
 
     res.json({
       success: true,
