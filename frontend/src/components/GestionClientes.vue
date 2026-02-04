@@ -14,7 +14,7 @@
                 { 'is-invalid': !dniValido },
                 { 'readonly-input': editando },
               ]" :readonly="editando" required oninvalid="this.setCustomValidity('Por favor, rellene este campo')"
-              oninput="this.setCustomValidity('')" />
+              oninput="this.setCustomValidity('')" @blur.stop.prevent="capitalizarDni" />
             <button type="button" class="btn btn btn-primary ms-3 border-0 shadow-none rounded-0"
               @click="buscarClientePorDNI(nuevoCliente.dni)" :disabled="editando" :aria-disabled="String(editando)"
               title="Buscar por DNI">
@@ -76,8 +76,13 @@
         <!-- Móvil -->
         <div class="col-md-3 d-flex align-items-center">
           <label for="movil" class="form-label me-4 ms-5 mb-0 text-nowrap">Móvil:</label>
-          <input type="tel" id="movil" v-model="nuevoCliente.movil" @blur="validarMovil"
-            class="form-control flex-grow-1 text-center" :class="{ 'is-invalid': !movilValido }" />
+          <div class="d-flex flex-grow-1">
+            <input type="tel" id="movil" v-model="nuevoCliente.movil" @blur="validarMovil"
+              class="form-control flex-grow-1 text-center" :class="{ 'is-invalid': !movilValido }" />
+            <button type="button" class="btn btn-primary ms-2" @click="buscarClientePorMovil(nuevoCliente.movil)" :disabled="!nuevoCliente.movil || editando">
+              <i class="bi bi-search"></i>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -86,7 +91,7 @@
         <!-- Dirección -->
         <div class="col-md-5 d-flex align-items-center">
           <label for="direccion" class="form-label mb-0 w-25 text-nowrap">Dirección:</label>
-          <input type="text" id="direccion" v-model="nuevoCliente.direccion" class="form-control flex-grow-1" />
+          <input type="text" id="direccion" v-model="nuevoCliente.direccion" class="form-control flex-grow-1" @blur="capitalizarTexto('direccion')" />
         </div>
 
         <!-- Provincia -->
@@ -112,8 +117,8 @@
           </select>
         </div>
       </div>
-      <!-- Contraseña y Repetir Contraseña -->
-      <div class="mb-3 row g-3 align-items-center justify-content-center">
+      <!-- Contraseña y Repetir Contraseña (solo al crear nuevo cliente) -->
+      <div v-if="!editando" class="mb-3 row g-3 align-items-center justify-content-center">
         <div class="col-md-4 d-flex align-items-center">
           <label for="password" class="form-label mb-0 text-nowrap flex-shrink-0 me-2">Contraseña:</label>
           <input
@@ -121,7 +126,7 @@
             id="password"
             v-model="nuevoCliente.password"
             class="form-control flex-grow-1"
-            :required="!editando"
+            required
             autocomplete="new-password"
           />
         </div>
@@ -132,7 +137,7 @@
             id="repetirPassword"
             v-model="repetirPassword"
             class="form-control flex-grow-1"
-            :required="!editando"
+            required
             autocomplete="new-password"
           />
         </div>
@@ -218,7 +223,15 @@
 
   <!-- Lista de Clientes -->
   <div v-if="admin" class="table-responsive">
-    <h4 class="text-center w-100">Listado Clientes</h4>
+    <div class="d-flex align-items-center justify-content-between mb-2">
+      <h4 class="m-0">Listado Clientes</h4>
+      <div>
+        <button @click="imprimirListado" class="btn btn-outline-secondary btn-sm me-2" title="Imprimir listado">
+          <i class="bi bi-printer"></i>
+          <span class="ms-1">Imprimir</span>
+        </button>
+      </div>
+    </div>
     <table class="table table-bordered table-striped table-hover table-sm align-middle">
       <thead class="table-primary">
         <tr>
@@ -307,7 +320,7 @@ import { ref, onMounted, onUnmounted, computed, watch } from "vue";
 import { useRouter } from "vue-router";
 import provmuniData from "@/data/provmuni.json";
 import Swal from "sweetalert2";
-import { getClientes, deleteCliente, addCliente, updateCliente, patchCliente, getClientePorDni, getDni, getClienteLogueado } from "@/api/clientes.js";
+import { getClientes, deleteCliente, addCliente, updateCliente, patchCliente, getClientePorDni, getClientePorMovil, getDni, getClienteLogueado } from "@/api/clientes.js";
 import { registerUsuario, loginUsuario, checkAdmin } from "@/api/authApi.js";
 
 const router = useRouter();
@@ -480,15 +493,19 @@ const totalPages = computed(() => {
 
 
 const guardarCliente = async () => {
-  // Validar contraseñas
-  if (nuevoCliente.value.password !== repetirPassword.value) {
-    Swal.fire({
-      icon: 'error',
-      title: 'Error en contraseña',
-      text: 'Las contraseñas no coinciden.',
-      showConfirmButton: true
-    });
-    return;
+  // Validar contraseñas:
+  // - Si estamos creando (no editando) => las contraseñas deben coincidir
+  // - Si estamos editando y se proporciona una nueva contraseña => deben coincidir
+  if (!editando.value) {
+    if (nuevoCliente.value.password !== repetirPassword.value) {
+      Swal.fire({ icon: 'error', title: 'Error en contraseña', text: 'Las contraseñas no coinciden.', showConfirmButton: true });
+      return;
+    }
+  } else {
+    if (nuevoCliente.value.password && nuevoCliente.value.password !== repetirPassword.value) {
+      Swal.fire({ icon: 'error', title: 'Error en contraseña', text: 'Las contraseñas no coinciden.', showConfirmButton: true });
+      return;
+    }
   }
 
   // Validar duplicados solo si estás creando (no si editando)
@@ -614,6 +631,86 @@ const guardarCliente = async () => {
       showConfirmButton: false,
       timer: 3000
     });
+  }
+};
+
+// Imprimir listado de clientes (solo admins)
+const imprimirListado = () => {
+  try {
+    const listado = Array.isArray(clientes.value) ? clientes.value : [];
+    const incluirHistorico = mostrarHistorico.value ? ' (incluye históricos)' : '';
+
+    const escapeHtml = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+    const rows = listado.map((c, idx) => `
+      <tr>
+        <td style="text-align:center">${idx + 1}</td>
+        <td>${escapeHtml(c.dni)}</td>
+        <td>${escapeHtml(c.apellidos)}</td>
+        <td>${escapeHtml(c.nombre)}</td>
+        <td>${escapeHtml(c.email)}</td>
+        <td style="text-align:center">${escapeHtml(c.movil)}</td>
+        <td>${escapeHtml(c.municipio)}</td>
+        <td>${escapeHtml(c.provincia)}</td>
+        <td>${escapeHtml(c.fecha_alta)}</td>
+      </tr>
+    `).join('');
+
+    const style = `
+      <style>
+        body{font-family:Arial,Helvetica,sans-serif;padding:16px;color:#222}
+        table{width:100%;border-collapse:collapse;margin-top:12px}
+        th,td{border:1px solid #ddd;padding:6px;font-size:12px}
+        th{background:#f5f5f5;text-align:left}
+        h1{font-size:18px;margin:0}
+      </style>
+    `;
+
+    const html = `
+      <html>
+        <head>
+          <title>Listado Clientes</title>
+          ${style}
+        </head>
+        <body>
+          <h1>Listado de clientes${incluirHistorico}</h1>
+          <table>
+            <thead>
+              <tr>
+                <th style="width:50px">#</th>
+                <th>DNI</th>
+                <th>Apellidos</th>
+                <th>Nombre</th>
+                <th>Email</th>
+                <th style="width:120px;text-align:center">Móvil</th>
+                <th>Municipio</th>
+                <th>Provincia</th>
+                <th>Fecha alta</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows}
+            </tbody>
+          </table>
+        </body>
+      </html>
+    `;
+
+    const w = window.open('', '_blank');
+    if (!w) {
+      Swal.fire({ icon: 'error', title: 'Popup bloqueado', text: 'Permite popups para imprimir el listado.' });
+      return;
+    }
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+    // esperar un poco a que renderice y lanzar imprimir
+    setTimeout(() => {
+      try { w.focus(); w.print(); } catch (e) { console.warn('print error', e); }
+    }, 350);
+  } catch (e) {
+    console.error('Error imprimiendo listado:', e);
+    Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo preparar el listado para impresión.' });
   }
 };
 
@@ -797,6 +894,33 @@ const buscarClientePorDNI = async (dni) => {
     });
   }
 }
+const buscarClientePorMovil = async (movil) => {
+  if (!movil || movil.trim() === '') {
+    Swal.fire({ icon: 'warning', title: 'Debe introducir un móvil antes de buscar.', timer: 1500, showConfirmButton: false });
+    return;
+  }
+
+  try {
+    const cliente = await getClientePorMovil(movil.trim());
+    if (!cliente) {
+      Swal.fire({ icon: 'info', title: 'Cliente no encontrado', text: 'No existe ningún cliente con ese móvil.', timer: 1500, showConfirmButton: false });
+      return;
+    }
+
+    // Cargar los datos en el formulario como en buscar por DNI
+    nuevoCliente.value = { ...cliente, password: "" };
+    nuevoCliente.value.fecha_alta = formatearFechaParaInput(cliente.fecha_alta);
+    filtrarMunicipios();
+    nuevoCliente.value.municipio = cliente.municipio;
+    editando.value = true;
+    clienteEditandoId.value = cliente.id;
+
+    Swal.fire({ icon: 'success', title: 'Cliente encontrado y cargado', timer: 1500, showConfirmButton: false });
+  } catch (error) {
+    console.error('Error buscando cliente por móvil:', error);
+    Swal.fire({ icon: 'error', title: 'Error al buscar cliente', text: 'Verifique la conexión o contacte con el administrador.', timer: 2000, showConfirmButton: false });
+  }
+};
 const vaciarFormulario = async () => {
   // Debug log to confirm handler execution
   console.debug('vaciarFormulario: clearing form');
@@ -925,6 +1049,11 @@ const validarDni = () => {
   // Si todo pasa
   dniValido.value = true;
   dniError.value = "";
+};
+
+// Capitalizar/forzar mayúsculas del DNI en blur
+const capitalizarDni = () => {
+  nuevoCliente.value.dni = (nuevoCliente.value.dni || '').trim().toUpperCase();
 };
 
 // Función única: capitaliza y asigna en el mismo paso

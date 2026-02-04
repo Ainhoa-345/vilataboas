@@ -3,8 +3,9 @@ import axios from "axios";
 // Usar el backend Express para artículos (dev: puerto 5000 -> /api/articulos).
 // Antes se apuntaba a json-server raíz; eso devolvía todo el JSON y los artículos
 // no tenían la misma forma (p.ej. imagen en /uploads). Apuntamos al router Express.
-const API_URL = "http://localhost:5000/api/articulos";
+// During development prefer json-server (3000) to avoid depending on Express/Mongo.
 const JSON_SERVER_URL = "http://localhost:3000/articulos";
+const API_URL = JSON_SERVER_URL; // temporarily point API to json-server for dev
 
 
 // Obtener todos los artículos

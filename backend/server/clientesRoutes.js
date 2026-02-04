@@ -110,7 +110,29 @@ router.patch('/:id', async (req, res) => {
   const existingRes = await axios.get(`${JSON_SERVER}/${id}`);
   const existing = existingRes.data || {};
   const body = { ...req.body };
+  // Mantener tipo existente
   body.tipo = existing.tipo || 'user';
+
+  // Gestionar password en PATCH:
+  // - Si no viene el campo (undefined) -> no tocar la password (el PATCH no incluirá el campo)
+  // - Si viene vacío o cadena vacía -> conservar hash existente
+  // - Si viene una nueva contraseña no hasheada -> hashearla antes de enviarla a json-server
+  if (!('password' in req.body)) {
+    // eliminar cualquier password en body para evitar sobrescribir
+    delete body.password;
+  } else {
+    const incomingPass = body.password || '';
+    if (!incomingPass || incomingPass.trim() === '') {
+      // conservar el hash existente
+      body.password = existing.password || '';
+    } else {
+      // si no parece ya hasheada (bcrypt comienza por $2), hashearla
+      if (!incomingPass.startsWith('$2')) {
+        body.password = bcrypt.hashSync(incomingPass, 10);
+      }
+    }
+  }
+
   const response = await axios.patch(`${JSON_SERVER}/${id}`, body);
     res.status(response.status).json(response.data);
   } catch (error) {
@@ -149,6 +171,26 @@ router.get('/dni/:dni', async (req, res) => {
   } catch (error) {
     console.error('Error en GET /api/clientes/dni/:dni', error.message || error);
     res.status(500).json({ message: 'Error obteniendo cliente por DNI' });
+  }
+});
+
+// Obtener cliente por MÓVIL (ej: /api/clientes/movil/678123456)
+router.get('/movil/:movil', async (req, res) => {
+  try {
+    const movil = req.params.movil;
+    let response;
+    try {
+      response = await axios.get(`${JSON_SERVER}?movil=${encodeURIComponent(movil)}`);
+    } catch (err) {
+      console.error('Error consultando json-server en /movil/:movil:', err.message || err);
+      return res.status(502).json({ message: 'Servicio de datos no disponible' });
+    }
+    const data = response.data || [];
+    if (!data || data.length === 0) return res.status(404).json({ message: 'Cliente no encontrado' });
+    res.json(data[0]);
+  } catch (error) {
+    console.error('Error en GET /api/clientes/movil/:movil', error.message || error);
+    res.status(500).json({ message: 'Error obteniendo cliente por móvil' });
   }
 });
 

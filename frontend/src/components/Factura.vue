@@ -1,7 +1,7 @@
 <template>
   <div class="container mt-4">
     <h3>Factura</h3>
-    <div v-if="items.length === 0" class="alert alert-info">No hay artículos en la cesta.</div>
+  <div v-if="invoiceItems.length === 0" class="alert alert-info">No hay artículos en la factura.</div>
 
     <div v-else>
       <div v-if="loading" class="text-center my-4">
@@ -69,7 +69,7 @@
         <div class="invoice-totals">
           <div class="tot-row"><span>Subtotal:</span><strong>{{ formatPrecio(subtotal) }}</strong></div>
           <div class="tot-row"><span>IVA (21%):</span><strong>{{ formatPrecio(iva) }}</strong></div>
-          <div class="tot-row total"><span>TOTAL:</span><strong>{{ formatPrecio(totalPrecio) }}</strong></div>
+         <div class="tot-row total"><span>TOTAL:</span><strong>{{ formatPrecio(total) }}</strong></div>
         </div>
 
         <div class="invoice-footer">¡Gracias por su compra! Esta factura ha sido generada electrónicamente y es válida sin firma.</div>
@@ -79,18 +79,22 @@
         <button class="btn btn-primary" @click="generarPDF">Descargar factura (PDF)</button>
         <button class="btn btn-secondary" @click="volver">Volver a la tienda</button>
       </div>
+      <div v-if="saveStatus" class="mt-2">
+        <div :class="['alert', (saveStatus === 'Guardada' || saveStatus === 'GuardadaLocal') ? 'alert-success' : 'alert-info']" role="alert">{{ saveMessage }}</div>
+      </div>
       </div>
   </div>
   </div>
 </template>
 
 <script setup>
-import { computed, ref, onMounted } from 'vue'
+import { computed, ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCestaStore } from '@/store/cesta'
 import { jsPDF } from 'jspdf'
 import html2canvas from 'html2canvas'
 import { getArticuloById } from '@/api/articulos'
+import { getClienteLogueado } from '@/api/clientes'
 
 const router = useRouter()
 const cesta = useCestaStore()
@@ -105,20 +109,83 @@ const metodoPago = ref('Financiación')
 
 const invoiceRef = ref(null)
 
+// estado de guardado
+const saveStatus = ref('') // '' | 'Guardada' | 'Error' | 'Guardando'
+const saveMessage = ref('')
+const savedKey = `facturaSaved_${facturaId}`
+
 // copia local de items para enriquecer con datos del backend si falta info del vehículo
 const invoiceItems = ref([])
 
-const subtotal = computed(()=>{
+// total (precio mostrado en los items) — se asume que incluye IVA
+const total = computed(()=>{
   return invoiceItems.value.reduce((s,it)=> s + (it.precio * (it.cantidad || 1)), 0)
 })
-const iva = computed(()=> Math.round(subtotal.value * 0.21 * 100) / 100)
+
+// Si el precio de venta incluye IVA, extraemos la base imponible (subtotal sin IVA)
+// subtotal = total / 1.21, iva = total - subtotal
+const subtotal = computed(()=> Math.round((total.value / 1.21) * 100) / 100)
+const iva = computed(()=> Math.round((total.value - subtotal.value) * 100) / 100)
 
 onMounted(async ()=>{
-  // primero intentar hidratar/persistir desde el store (esto actualizará localStorage si había datos faltantes)
-  await ensureHydration()
+  // intentar cargar cliente desde sessionStorage (guardado por BuyerDataModal)
+  try{
+    const raw = sessionStorage.getItem('cliente')
+    if (raw){
+      const parsed = JSON.parse(raw)
+      cliente.value = { ...cliente.value, ...parsed }
+    }
+  }catch(e){
+    console.warn('No se pudieron cargar datos de cliente desde sessionStorage', e)
+  }
 
-  // ahora inicializar invoiceItems desde la versión del store (ya enriquecida si fue posible)
-  invoiceItems.value = cesta.items.map(it => ({ ...it }))
+  // si no hay cliente en sessionStorage, intentar obtenerlo desde el backend (cliente logueado)
+  if (!cliente.value || !cliente.value.nombre){
+    try{
+      const logged = await getClienteLogueado()
+      if (logged){
+        cliente.value.nombre = `${logged.nombre || ''} ${logged.apellidos || ''}`.trim()
+        cliente.value.nif = logged.dni || ''
+        cliente.value.email = logged.email || ''
+        cliente.value.telefono = logged.movil || ''
+        cliente.value.direccion = logged.direccion || ''
+      }
+    }catch(e){
+      // no hay token o backend no disponible; seguir sin bloquear
+      // console.warn('No se pudo obtener cliente logueado', e)
+    }
+  }
+
+  // Priorizar snapshot guardado en sessionStorage (guardado en Cesta antes de vaciarla)
+  try{
+    const snap = sessionStorage.getItem('invoiceItems')
+    if (snap){
+      invoiceItems.value = JSON.parse(snap) || []
+      // limpiar snapshot para evitar reutilizarlo accidentalmente
+      // (no lo eliminamos todavía para permitir re-descarga si hace falta)
+    } else {
+      // hidratar desde el store si no hay snapshot
+      await ensureHydration()
+      invoiceItems.value = cesta.items.map(it => ({ ...it }))
+    }
+  }catch(e){
+    console.warn('Error leyendo invoiceItems desde sessionStorage', e)
+    await ensureHydration()
+    invoiceItems.value = cesta.items.map(it => ({ ...it }))
+  }
+
+  // si hay información de pago guardada, usarla
+  try{
+    const paidRaw = sessionStorage.getItem('paidInfo')
+    if (paidRaw){
+      const paid = JSON.parse(paidRaw)
+      if (paid && paid.metodo) metodoPago.value = paid.metodo
+      // limpiar para no repetir
+      sessionStorage.removeItem('paidInfo')
+    }
+  }catch(e){
+    console.warn('No se pudo procesar paidInfo', e)
+  }
 
   // por si acaso, intentar recuperar datos concretos desde el backend para los items que sigan incompletos
   for (let i = 0; i < invoiceItems.value.length; i++){
@@ -139,6 +206,114 @@ onMounted(async ()=>{
 })
 
 const loading = ref(false)
+
+async function saveFactura(){
+  try{
+    saveStatus.value = 'Guardando'
+    saveMessage.value = 'Guardando factura en el servidor...'
+    const payload = {
+      numeroFactura: facturaId,
+      fecha: new Date().toISOString(),
+      cliente: cliente.value,
+      items: invoiceItems.value.map(it => {
+        // normalizar id a string para evitar errores de cast (ObjectId -> { $oid: ... })
+        const rawId = it.id || it._id || null
+        let normId = null
+        try{
+          if (!rawId) normId = null
+          else if (typeof rawId === 'string') {
+            // si la cadena contiene un ObjectId embebido como "{ '$oid': '...' }" extraer el hex
+            const m = rawId.match(/([a-fA-F0-9]{24})/)
+            if (m) normId = m[1]
+            else normId = rawId
+          }
+          else if (rawId.$oid) normId = rawId.$oid
+          else if (rawId.toString) normId = rawId.toString()
+        }catch(e){ normId = null }
+
+        return {
+          id: normId,
+          matricula: it.matricula || null,
+          marca: it.marca || it.marca || null,
+          modelo: it.modelo || it.nombre || null,
+          anio: it.anio || it.ano || null,
+          kilometros: it.kms || it.kilometros || null,
+          precio: Number(it.precio) || 0,
+          cantidad: Number(it.cantidad) || 1
+        }
+      }),
+      subtotal: subtotal.value,
+      iva: iva.value,
+      total: total.value,
+      estadoPago: 'pagado',
+      // normalizar metodoPago: backend acepta 'efectivo'|'tarjeta'|'transferencia'
+      metodoPago: (function(){
+        const allowed = ['efectivo','tarjeta','transferencia']
+        const val = (metodoPago.value || '').toString().toLowerCase()
+        if (allowed.includes(val)) return val
+        // mapear términos comunes
+        if (val.includes('financi')) return 'transferencia'
+        if (val.includes('card') || val.includes('tarjeta')) return 'tarjeta'
+        return 'efectivo'
+      })()
+    }
+
+    const res = await fetch('/api/facturas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+
+    if (!res.ok) {
+      const err = await res.json().catch(()=>({ error: res.statusText }))
+      saveStatus.value = 'Error'
+      saveMessage.value = `No se pudo guardar la factura: ${err.error || res.statusText}`
+      console.error('Save factura error', err)
+      return
+    }
+    const saved = await res.json().catch(()=>null)
+    // Backend ahora retorna { status, location, id?, transaccionId?, pendingFile?, pendingCount?, message?, forwardedStatus?, forwardedBody? }
+    if (res.status === 201) {
+      // puede ser saved_db o saved_jsonserver
+      if (saved && saved.location === 'db'){
+        saveStatus.value = 'Guardada'
+        saveMessage.value = `Factura guardada en la base de datos (id: ${saved.id || (saved.factura && saved.factura._id) || ''})`
+      } else if (saved && saved.location === 'json-server'){
+        saveStatus.value = 'Guardada'
+        saveMessage.value = `Factura reenviada a json-server (transaccion: ${saved.transaccionId || ''})`
+      } else {
+        saveStatus.value = 'Guardada'
+        saveMessage.value = saved?.message || 'Factura procesada.'
+      }
+    } else if (res.status === 202) {
+      saveStatus.value = 'GuardadaLocal'
+      const file = saved?.pendingFile || 'backend/data/pending_facturas.json'
+      const count = saved?.pendingCount || undefined
+      saveMessage.value = `Factura guardada localmente en: ${file}` + (count ? ` (pendientes: ${count})` : '')
+    } else {
+      saveStatus.value = 'Guardada'
+      saveMessage.value = saved?.message || 'Factura procesada.'
+    }
+    // marcar en sessionStorage para evitar reenvíos desde la misma sesión
+    try{ sessionStorage.setItem(savedKey, '1') }catch(e){ /* ignore */ }
+    console.log('Factura guardada', saved)
+  }catch(e){
+    saveStatus.value = 'Error'
+    saveMessage.value = 'Error guardando la factura: ' + (e.message || e)
+    console.error('saveFactura exception', e)
+  }
+}
+
+// Watcher: guardar la factura automáticamente cuando invoiceItems esté listo
+watch(invoiceItems, async (newVal) => {
+  try{
+    if (Array.isArray(newVal) && newVal.length > 0 && !sessionStorage.getItem(savedKey) && saveStatus.value !== 'Guardando' && saveStatus.value !== 'Guardada'){
+      await saveFactura()
+    }
+  }catch(e){
+    console.warn('Watcher saveFactura error', e)
+  }
+}, { immediate: true, deep: true })
 
 // si se accede a la factura y los items no están completos, intentar hidratar y guardar en el store
 async function ensureHydration(){

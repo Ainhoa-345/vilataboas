@@ -10,7 +10,7 @@ import CitasTaller from "../components/CitasTaller.vue";
 import MoDelos from "../components/MoDelos.vue";
 import TablaLogin from "../components/TablaLogin.vue";
 import ContacTo from "../components/ContacTo.vue";
-import Buscar from "../components/Buscar.vue";
+import Buscar from "../components/BusCar.vue";
 import Cesta from "../components/Cesta.vue";
 import Factura from "../components/Factura.vue";
 import Perfil from "../components/Perfil.vue";

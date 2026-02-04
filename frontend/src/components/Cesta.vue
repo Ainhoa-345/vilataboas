@@ -40,7 +40,8 @@
       </div>
     </div>
   </div>
-  <PaymentModal v-if="showPayment" @close="onPagoCerrado" @financing="onPagoFinanciacion" @paid="onPagoRealizado" />
+  <PaymentModal v-if="showPayment" @close="onPagoCerrado" @financing="onPagoFinanciacion" @paid="onPagoRealizado" @require-client="() => { showBuyerModal = true; showPayment = false }" />
+  <BuyerDataModal v-if="showBuyerModal" @close="() => showBuyerModal = false" @saved="onBuyerSaved" />
 </template>
 
 <script setup>
@@ -48,6 +49,7 @@ import { useCestaStore } from '@/store/cesta'
 import { useRouter } from 'vue-router'
 import { computed, ref } from 'vue'
 import PaymentModal from './PaymentModal.vue'
+import BuyerDataModal from './BuyerDataModal.vue'
 import placeholderImg from '@/assets/404.jpg'
 
 const cesta = useCestaStore()
@@ -61,6 +63,7 @@ const totalPrecio = computed(() => cesta.totalPrecio)
 const mensaje = ref('')
 let mensajeTimer = null
 const showPayment = ref(false)
+const showBuyerModal = ref(false)
 
 const resolveImagen = (ruta) => {
   if (!ruta) return placeholderImg;
@@ -101,7 +104,19 @@ function procederPago(){
     mensajeTimer = setTimeout(() => mensaje.value = '', 2500)
     return
   }
-  showPayment.value = true
+  // si ya tenemos datos del comprador en sessionStorage, abrir el modal de pago
+  try{
+    const stored = sessionStorage.getItem('cliente')
+    if (stored) {
+      showPayment.value = true
+      return
+    }
+  }catch(e){
+    // si falla el acceso a sessionStorage, caeremos al modal de captura igualmente
+    console.warn('No se pudo leer cliente de sessionStorage', e)
+  }
+  // mostrar modal para pedir datos del comprador antes del pago
+  showBuyerModal.value = true
 }
 
 function onPagoCerrado(){
@@ -109,18 +124,59 @@ function onPagoCerrado(){
 }
 
 function onPagoFinanciacion(){
-  // ir a la página de descarga de factura
+  // preparar snapshot para la factura (Factua.vue lo leerá desde sessionStorage), vaciar la cesta y navegar
   showPayment.value = false
+  try{
+    // guardar snapshot de items para que Factura pueda renderizar incluso después de vaciar la cesta
+    sessionStorage.setItem('invoiceItems', JSON.stringify(cesta.items))
+    // guardar información de pago mínima
+    const paidInfo = { metodo: 'Financiación', referencia: Math.random().toString(36).slice(2,10) }
+    sessionStorage.setItem('paidInfo', JSON.stringify(paidInfo))
+    // asegurar que los datos del cliente estén presentes (Factura los leerá desde sessionStorage)
+    // (si no existen, el flujo de Factura mostrará campos vacíos)
+  }catch(e){
+    console.warn('No se pudo preparar snapshot para financiación', e)
+  }
+  // vaciar la cesta localmente ahora que hemos guardado un snapshot
+  cesta.clearCesta()
   router.push('/factura')
+}
+
+function onBuyerSaved(cliente){
+  // cerrar modal de buyer y abrir modal de pago
+  showBuyerModal.value = false
+  showPayment.value = true
+  try{
+    // guardar un snapshot de la cesta en el momento en que el comprador introduce sus datos
+    // así Factura.vue podrá usarlo aunque la cesta se vacíe después
+    sessionStorage.setItem('invoiceItems', JSON.stringify(cesta.items))
+  }catch(e){
+    console.warn('No se pudo guardar snapshot de invoiceItems al guardar buyer', e)
+  }
 }
 
 function onPagoRealizado(payload){
   // payload contiene { metodo, referencia }
   showPayment.value = false
+  try{
+    // guardar snapshot de la cesta y la info de pago para que Factura.vue pueda mostrarla
+    sessionStorage.setItem('invoiceItems', JSON.stringify(cesta.items))
+    sessionStorage.setItem('paidInfo', JSON.stringify(payload))
+  }catch(e){
+    console.warn('No se pudo guardar snapshot de pago en sessionStorage', e)
+  }
+
   cesta.clearCesta()
   mensaje.value = `Pago realizado (${payload.metodo}). Ref: ${payload.referencia}`
   clearTimeout(mensajeTimer)
   mensajeTimer = setTimeout(() => mensaje.value = '', 4000)
+
+  // navegar a la factura para permitir descarga / visualización
+  try{
+    router.push('/factura')
+  }catch(e){
+    console.warn('No se pudo navegar a /factura tras el pago', e)
+  }
 }
 </script>
 

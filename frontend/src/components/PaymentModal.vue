@@ -46,7 +46,7 @@
 import { ref, computed } from 'vue'
 import { useCestaStore } from '@/store/cesta'
 
-const emit = defineEmits(['close','financing','paid'])
+const emit = defineEmits(['close','financing','paid','require-client'])
 const cesta = useCestaStore()
 
 const metodo = ref('')
@@ -60,6 +60,20 @@ function generateRef(){
 const formatoImporte = computed(()=>`${cesta.totalPrecio} €`)
 
 function seleccionar(m){
+  // Antes de permitir elegir cualquier método, asegurarnos de que existen los datos del cliente
+  try{
+    const raw = sessionStorage.getItem('cliente')
+    if (!raw){
+      // pedir datos al padre
+      emit('require-client')
+      return
+    }
+  }catch(e){
+    console.warn('No se pudo acceder a sessionStorage para cliente', e)
+    emit('require-client')
+    return
+  }
+
   if (m === 'financiacion'){
     // financiar: llevar a la sección de factura
     emit('financing')
@@ -70,6 +84,18 @@ function seleccionar(m){
 
 function confirmarTarjeta(){
   // validación mínima (placeholder)
+  // comprobar que existen datos del cliente
+  try{
+    const raw = sessionStorage.getItem('cliente')
+    if (!raw){
+      emit('require-client')
+      return
+    }
+  }catch(e){
+    console.warn('No se pudo leer cliente desde sessionStorage', e)
+    emit('require-client')
+    return
+  }
   if (!tarjeta.value.numero) {
     alert('Introduce los datos de la tarjeta (demo).')
     return
@@ -81,6 +107,19 @@ function confirmarTarjeta(){
 }
 
 function confirmarTransferencia(){
+  // comprobar que existen datos del cliente
+  try{
+    const raw = sessionStorage.getItem('cliente')
+    if (!raw){
+      emit('require-client')
+      return
+    }
+  }catch(e){
+    console.warn('No se pudo leer cliente desde sessionStorage', e)
+    emit('require-client')
+    return
+  }
+
   alert('Gracias. Cuando confirmemos la transferencia se procesará el pedido.')
   emit('paid', { metodo: 'transferencia', referencia })
   emit('close')
