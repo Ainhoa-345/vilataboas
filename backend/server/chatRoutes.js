@@ -132,11 +132,23 @@ router.post("/message", async (req, res) => {
       })();
     }
   } catch (error) {
-    console.error("Error en el chat de Gemini:", error);
+    // Si el error proviene del cliente de Gemini (p. ej. clave 403 o clave filtrada),
+    // retornar un fallback en 200 para que el frontend muestre una respuesta amigable
+    // en lugar de fallar con 500. Logueamos el detalle para diagnóstico.
+    console.error("Error en el chat de Gemini (outer):", error);
+
+  const msg = (error && (error.message || error.toString())) ? String(error.message || error.toString()) : '';
+    const isGeminiAuthError = /403 Forbidden|reported as leaked|GoogleGenerativeAI/.test(msg);
+
+    if (isGeminiAuthError) {
+      const fallback = `Hola, gracias por tu mensaje.\n\nNo puedo conectar con el asistente ahora mismo (problema de autenticación). Inténtalo más tarde.`;
+      return res.json({ success: true, response: fallback });
+    }
+
     res.status(500).json({
       success: false,
       error: "Error al procesar el mensaje",
-      details: error.message,
+      details: msg,
     });
   }
 });
