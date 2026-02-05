@@ -172,13 +172,21 @@
           </div>
         </div>
       </div>
-      <!-- Botón centrado (centro) -->
+      <!-- Botones centrados: Imprimir (si admin) | Guardar | Vaciar (icono refrescar) -->
       <div class="d-flex justify-content-center align-items-center gap-3">
+        <!-- Imprimir: aparece a la izquierda de Guardar y con el mismo estilo -->
+        <button v-if="admin" type="button" class="btn btn-primary border-0 shadow-none rounded-0" @click="imprimirListado" title="Imprimir listado" aria-label="Imprimir listado">
+          <i class="bi bi-printer"></i>
+          <span class="ms-1">Imprimir listado</span>
+        </button>
+
         <button type="submit" class="btn btn-primary border-0 shadow-none rounded-0">
           {{ editando ? "Modificar Cliente" : "Guardar" }}
         </button>
-        <button id="vaciarBtn" type="button" class="btn btn-secondary border-0 shadow-none rounded-0" @click="clearClicked">
-          Vaciar
+
+        <!-- Vaciar ahora es un icono de refrescar -->
+        <button id="vaciarBtn" type="button" class="btn btn-secondary border-0 shadow-none rounded-0" @click="clearClicked" title="Vaciar formulario" aria-label="Vaciar formulario">
+          <i class="bi bi-arrow-clockwise"></i>
         </button>
       </div>
     </form>
@@ -225,12 +233,7 @@
   <div v-if="admin" class="table-responsive">
     <div class="d-flex align-items-center justify-content-between mb-2">
       <h4 class="m-0">Listado Clientes</h4>
-      <div>
-        <button @click="imprimirListado" class="btn btn-outline-secondary btn-sm me-2" title="Imprimir listado">
-          <i class="bi bi-printer"></i>
-          <span class="ms-1">Imprimir</span>
-        </button>
-      </div>
+      <!-- El botón de imprimir se ha movido al formulario (a la izquierda de Guardar) -->
     </div>
     <table class="table table-bordered table-striped table-hover table-sm align-middle">
       <thead class="table-primary">
@@ -319,6 +322,8 @@
 import { ref, onMounted, onUnmounted, computed, watch } from "vue";
 import { useRouter } from "vue-router";
 import provmuniData from "@/data/provmuni.json";
+// Logo para impresión (Vite asset import)
+import logoEmpresa from "@/assets/logoEmpresaTeis.svg";
 import Swal from "sweetalert2";
 import { getClientes, deleteCliente, addCliente, updateCliente, patchCliente, getClientePorDni, getClientePorMovil, getDni, getClienteLogueado } from "@/api/clientes.js";
 import { registerUsuario, loginUsuario, checkAdmin } from "@/api/authApi.js";
@@ -658,8 +663,10 @@ const imprimirListado = () => {
 
     const style = `
       <style>
-        body{font-family:Arial,Helvetica,sans-serif;padding:16px;color:#222}
-        table{width:100%;border-collapse:collapse;margin-top:12px}
+        /* Ensure printable layout and position for the logo */
+        body{font-family:Arial,Helvetica,sans-serif;padding:16px;color:#222;position:relative}
+        .logo-print{position:absolute;top:10px;right:10px;width:80px;height:auto}
+        table{width:100%;border-collapse:collapse;margin-top:48px}
         th,td{border:1px solid #ddd;padding:6px;font-size:12px}
         th{background:#f5f5f5;text-align:left}
         h1{font-size:18px;margin:0}
@@ -673,6 +680,9 @@ const imprimirListado = () => {
           ${style}
         </head>
         <body>
+          <!-- Logo de la empresa en la esquina superior derecha -->
+          <img src="${logoEmpresa}" class="logo-print" alt="Logo empresa" />
+
           <h1>Listado de clientes${incluirHistorico}</h1>
           <table>
             <thead>
