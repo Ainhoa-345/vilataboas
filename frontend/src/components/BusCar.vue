@@ -104,9 +104,9 @@
       "
       class="mt-4"
     >
-      <div class="alert alert-info">
-        No se encontraron resultados para "{{ searchTerm }}"
-      </div>
+        <div class="alert alert-info">
+          No se encontraron resultados para "{{ searchTerm }}"
+        </div>
     </div>
   </div>
 </template>
@@ -138,13 +138,8 @@ const highlightMatch = (text) => {
   return textStr.replace(regex, '<span class="highlight-match">$1</span>');
 };
 
-// Función para buscar clientes (solo si está logueado)
+// Función para buscar clientes (intenta buscar aunque no haya sesión; si el backend rechaza, se captura el error)
 const buscarClientes = async (termino) => {
-  if (!isLogueado.value) {
-    clientes.value = [];
-    return;
-  }
-
   try {
     const response = await axios.get(`http://localhost:3000/clientes`);
     const terminoLower = termino.toLowerCase().trim();
@@ -203,13 +198,8 @@ const buscarNoticias = async (termino) => {
   }
 };
 
-// Función para buscar vehículos (solo si está logueado)
+// Función para buscar vehículos (intenta buscar aunque no haya sesión; si el backend rechaza, se captura el error)
 const buscarVehiculos = async (termino) => {
-  if (!isLogueado.value) {
-    vehiculos.value = [];
-    return;
-  }
-
   try {
     const response = await axios.get(`http://localhost:5000/api/articulos`);
     const terminoLower = termino.toLowerCase().trim();
@@ -253,8 +243,12 @@ const realizarBusqueda = async () => {
     await buscarClientes(searchTerm.value);
     await buscarNoticias(searchTerm.value);
     await buscarVehiculos(searchTerm.value);
+
+    // Si no hay resultados locales, mostramos el mensaje "No se encontraron resultados" (no se abre nada externo).
   }
 };
+
+// (No se abren buscadores externos automáticamente)
 
 // Watch para detectar cambios en la query (si buscamos desde el mismo componente)
 watch(

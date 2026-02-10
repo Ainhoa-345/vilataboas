@@ -193,10 +193,25 @@ export default {
           showConfirmButton: false,
           timer: 2000
         });
-        // Redirigir a la página de inicio y recargar con $router
-        // $router se usa para evitar problemas de historial en SPA
-        // window.location.reload() recarga la página para reflejar el estado autenticado
-        this.$router.push({ name: 'Inicio' }).then(() => window.location.reload());
+        // Redirigir a la ruta solicitada por query 'redirect' (si existe), o al inicio
+        // Soportar tanto string ('/cesta') como object ({ name: 'Inicio' })
+        const requested = this.$route && this.$route.query && this.$route.query.redirect;
+        let target = { name: 'Inicio' };
+        if (requested) {
+          try {
+            // si requested parece una ruta absoluta (/cesta), usar path
+            if (typeof requested === 'string' && requested.startsWith('/')) {
+              target = { path: requested };
+            } else if (typeof requested === 'string') {
+              // intentar usar como path si no empieza por /
+              target = { path: requested };
+            }
+          } catch (e) {
+            target = { name: 'Inicio' };
+          }
+        }
+
+        this.$router.push(target).then(() => window.location.reload());
 
       } catch (error) {
         console.error("Error en iniciarSesion:", error);

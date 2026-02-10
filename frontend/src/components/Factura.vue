@@ -36,7 +36,7 @@
           <div class="info">
             <h5>Información de la Factura</h5>
             <div><strong>Fecha:</strong> {{ fecha }}</div>
-            <div><strong>Método de Pago:</strong> {{ metodoPago }}</div>
+            <div><strong>Método de Pago:</strong> {{ metodoPagoPresent }}</div>
             <div><strong>Estado:</strong> <span class="text-success">PAGADO</span></div>
           </div>
         </div>
@@ -102,10 +102,49 @@ const cesta = useCestaStore()
 const items = computed(()=>cesta.items)
 const totalPrecio = computed(()=>cesta.totalPrecio)
 
-const fecha = new Date().toLocaleString()
+// store a raw ISO date for payloads, and present a localized European formatted date to the user
+const fechaRaw = new Date().toISOString()
+const fecha = (function(){
+  try{
+    return new Date(fechaRaw).toLocaleString('es-ES', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false })
+  }catch(e){
+    return new Date().toLocaleString()
+  }
+})()
 const facturaId = 'FAC-' + Date.now().toString(16)
 const cliente = ref({ nombre: '', nif:'', email:'', telefono:'', direccion:'' })
-const metodoPago = ref('Financiación')
+// default empty; will be set from sessionStorage (paidInfo) or Stripe session if present
+const metodoPago = ref('')
+
+// Presentational mapping for the UI (human-friendly Spanish labels)
+const metodoPagoPresent = computed(() => {
+  try{
+    const raw = (metodoPago.value || '').toString().toLowerCase()
+    if (!raw){
+      // fallback: try sessionStorage paidInfo
+      try{
+        const paidRaw = sessionStorage.getItem('paidInfo')
+        if (paidRaw){
+          const p = JSON.parse(paidRaw)
+          if (p && p.metodo) return humanizeMetodo((p.metodo||'').toString().toLowerCase())
+        }
+      }catch(e){ /* ignore */ }
+      return '---'
+    }
+    return humanizeMetodo(raw)
+  }catch(e){ return metodoPago.value || '---' }
+})
+
+function humanizeMetodo(val){
+  if (!val) return '---'
+  if (val.includes('tarjeta') || val.includes('card') || val.includes('stripe')) return 'Tarjeta'
+  if (val.includes('transfer') || val.includes('transferencia') ) return 'Transferencia bancaria'
+  if (val.includes('financi')) return 'Financiación'
+  if (val.includes('paypal') || val.includes('pay')) return 'PayPal'
+  if (val.includes('efectivo')) return 'Efectivo'
+  // default: capitalize first
+  return val.charAt(0).toUpperCase() + val.slice(1)
+}
 
 const invoiceRef = ref(null)
 
@@ -176,6 +215,53 @@ onMounted(async ()=>{
 
   // si hay información de pago guardada, usarla
   try{
+    // First: check if Stripe redirected back with a session_id in the URL
+    try{
+      const params = new URLSearchParams(window.location.search)
+      const sid = params.get('session_id') || params.get('sessionId')
+      if (sid){
+        // ask backend for session details (paymentsRoutes will resolve to metodo: 'tarjeta')
+        try{
+          // Helper to attempt a fetch and return parsed JSON if ok
+          async function tryFetch(url){
+            try{
+              const r = await fetch(url)
+              if (r && r.ok) return await r.json()
+            }catch(e){ /* ignore */ }
+            return null
+          }
+
+          // Try a series of endpoints in order of likelihood to work in dev and prod
+          const tried = []
+          // 1) relative query param (works when Vite proxies /api -> backend)
+          tried.push(`/api/payments/session?session_id=${encodeURIComponent(sid)}`)
+          // 2) relative path-param (some setups strip query strings)
+          tried.push(`/api/payments/session/${encodeURIComponent(sid)}`)
+          // 3) direct backend origin (in case the dev proxy is not active)
+          const backend = (window.__BACKEND_ORIGIN__ || 'http://localhost:5000')
+          tried.push(`${backend}/api/payments/session?session_id=${encodeURIComponent(sid)}`)
+          tried.push(`${backend}/api/payments/session/${encodeURIComponent(sid)}`)
+
+          let info = null
+          for (const url of tried){
+            info = await tryFetch(url)
+            if (info) {
+              // console.debug('Recovered stripe session info from', url, info)
+              break
+            }
+          }
+
+          if (info && info.metodo){
+            metodoPago.value = info.metodo
+            try{ sessionStorage.setItem('paidInfo', JSON.stringify({ metodo: info.metodo, referencia: info.referencia })) }catch(e){}
+          } else {
+            console.warn('Could not retrieve stripe session info from tried endpoints', tried)
+          }
+        }catch(e){ console.warn('Could not fetch stripe session info', e) }
+      }
+    }catch(e){ console.warn('Error parsing URL for session_id', e) }
+
+    // Fallback: if there is already paidInfo in sessionStorage (transferencia/financiación/other)
     const paidRaw = sessionStorage.getItem('paidInfo')
     if (paidRaw){
       const paid = JSON.parse(paidRaw)

@@ -846,69 +846,7 @@
   "articulos": [
     {
       "_id": {
-        "$oid": "6909b9faf474abc658dc6e54"
-      },
-      "tipo": "coche",
-      "marca": "Toyota",
-      "modelo": "Corolla",
-      "anio": 2019,
-      "kilometros": 73500,
-      "precio": 13500,
-      "combustible": "gasolina",
-      "transmision": "manual",
-      "potencia_cv": 122,
-      "descripcion": "Toyota Corolla 2019 en muy buen estado, único propietario, revisiones al día.",
-      "ubicacion": {
-        "ciudad": "Santiago de Compostela",
-        "provincia": "A Coruña"
-      },
-      "imagen": "/uploads/toyota_corolla.jpeg",
-      "contacto": {
-        "nombre": "Juan Pérez",
-        "telefono": "+34 612 345 678",
-        "email": "juan.perez@example.com"
-      },
-      "fecha_publicacion": {
-        "$date": "2025-11-04T00:00:00.000Z"
-      },
-      "estado": "disponible",
-      "matricula": "ABC1213",
-      "id": "9c75"
-    },
-    {
-      "_id": {
-        "$oid": "690b1a9f7e347ebd181254a7"
-      },
-      "tipo": "coche",
-      "marca": "Volkswagen",
-      "modelo": "Golf",
-      "anio": 2020,
-      "kilometros": 48000,
-      "precio": 15800,
-      "combustible": "diésel",
-      "transmision": "manual",
-      "potencia_cv": 115,
-      "descripcion": "Volkswagen Golf 2020 con bajo consumo y mantenimiento reciente. ITV pasada.",
-      "ubicacion": {
-        "ciudad": "Vigo",
-        "provincia": "Pontevedra"
-      },
-      "imagen": "/uploads/volkswagen_golf.jpeg",
-      "contacto": {
-        "nombre": "María López",
-        "telefono": "+34 698 112 903",
-        "email": "maria.lopez@example.com"
-      },
-      "fecha_publicacion": {
-        "$date": "2025-11-03T00:00:00.000Z"
-      },
-      "estado": "disponible",
-      "matricula": "BBD1245",
-      "id": "6834"
-    },
-    {
-      "_id": {
-        "$oid": "690b1a9f7e347ebd181254a8"
+        "$oid": "698ae2881a17cfe2cf3adec5"
       },
       "tipo": "coche",
       "marca": "Peugeot",
@@ -918,28 +856,28 @@
       "precio": 9700,
       "combustible": "gasolina",
       "transmision": "automático",
+      "color": "azul marino",
+      "puertas": 5,
       "potencia_cv": 100,
       "descripcion": "Peugeot 208 automático en excelente estado interior, ideal para ciudad.",
       "ubicacion": {
-        "ciudad": "A Coruña",
-        "provincia": "A Coruña"
+        "ciudad": "Ourense",
+        "provincia": "Ourense"
       },
       "imagen": "/uploads/peugeot_208.jpeg",
       "contacto": {
-        "nombre": "Carlos Fernández",
-        "telefono": "+34 611 223 345",
-        "email": "carlos.fernandez@example.com"
+        "nombre": "Carlos Rodríguez",
+        "telefono": "+34 611 222 333",
+        "email": "carlos.rodriguez@example.com"
       },
-      "fecha_publicacion": {
-        "$date": "2025-10-28T00:00:00.000Z"
-      },
+      "fecha_publicacion": "2025-10-28T00:00:00.000Z",
       "estado": "disponible",
-      "matricula": "CAD4567",
-      "id": "c077"
+      "__v": 0,
+      "id": "dec5"
     },
     {
       "_id": {
-        "$oid": "690b1a9f7e347ebd181254a9"
+        "$oid": "698ae2881a17cfe2cf3adec6"
       },
       "tipo": "coche",
       "marca": "Tesla",
@@ -949,28 +887,28 @@
       "precio": 32500,
       "combustible": "eléctrico",
       "transmision": "automático",
+      "color": "rojo cereza",
+      "puertas": 4,
       "potencia_cv": 283,
       "descripcion": "Tesla Model 3 Long Range con Autopilot y mantenimiento oficial.",
       "ubicacion": {
-        "ciudad": "Ourense",
-        "provincia": "Ourense"
+        "ciudad": "A Coruña",
+        "provincia": "A Coruña"
       },
       "imagen": "/uploads/tesla_model3.jpeg",
       "contacto": {
-        "nombre": "Laura González",
-        "telefono": "+34 600 889 451",
-        "email": "laura.gonzalez@example.com"
+        "nombre": "Ana Martínez",
+        "telefono": "+34 622 333 444",
+        "email": "ana.martinez@example.com"
       },
-      "fecha_publicacion": {
-        "$date": "2025-10-20T00:00:00.000Z"
-      },
+      "fecha_publicacion": "2025-10-20T00:00:00.000Z",
       "estado": "reservado",
-      "matricula": "ABF5467",
-      "id": "d460"
+      "__v": 0,
+      "id": "dec6"
     },
     {
       "_id": {
-        "$oid": "690b1a9f7e347ebd181254aa"
+        "$oid": "698ae2881a17cfe2cf3adec7"
       },
       "tipo": "coche",
       "marca": "Seat",
@@ -985,25 +923,23 @@
       "potencia_cv": 105,
       "descripcion": "Seat León 1.6 TDI, cadena de distribución cambiada, muy cuidado.",
       "ubicacion": {
-        "ciudad": "Lugo",
-        "provincia": "Lugo"
+        "ciudad": "Pontevedra",
+        "provincia": "Pontevedra"
       },
-      "contacto": {
-        "nombre": "Andrés Castro",
-        "telefono": "+34 622 774 982",
-        "email": "andres.castro@example.com"
-      },
-      "fecha_publicacion": {
-        "$date": "2025-09-15T00:00:00.000Z"
-      },
-      "estado": "vendido",
       "imagen": "/uploads/seat_leon.jpeg",
-      "matricula": "3456GHI",
-      "id": "8fa4"
+      "contacto": {
+        "nombre": "Pedro García",
+        "telefono": "+34 633 444 555",
+        "email": "pedro.garcia@example.com"
+      },
+      "fecha_publicacion": "2025-09-15T00:00:00.000Z",
+      "estado": "vendido",
+      "__v": 0,
+      "id": "dec7"
     },
     {
       "_id": {
-        "$oid": "690b1a9f7e347ebd181254ab"
+        "$oid": "698ae2881a17cfe2cf3adec8"
       },
       "tipo": "coche",
       "marca": "Renault",
@@ -1013,24 +949,24 @@
       "precio": 6800,
       "combustible": "gasolina",
       "transmision": "manual",
+      "color": "negro",
+      "puertas": 5,
       "potencia_cv": 90,
       "descripcion": "Renault Clio 1.2, consumo muy bajo, revisado y sin accidentes.",
       "ubicacion": {
-        "ciudad": "Ferrol",
-        "provincia": "A Coruña"
+        "ciudad": "Vigo",
+        "provincia": "Pontevedra"
       },
-      "contacto": {
-        "nombre": "Beatriz Méndez",
-        "telefono": "+34 690 440 871",
-        "email": "beatriz.mendez@example.com"
-      },
-      "fecha_publicacion": {
-        "$date": "2025-08-10T00:00:00.000Z"
-      },
-      "estado": "disponible",
       "imagen": "/uploads/renault_clio.jpeg",
-      "matricula": "7890JKL",
-      "id": "a3a8"
+      "contacto": {
+        "nombre": "Laura Fernández",
+        "telefono": "+34 644 555 666",
+        "email": "laura.fernandez@example.com"
+      },
+      "fecha_publicacion": "2025-08-10T00:00:00.000Z",
+      "estado": "disponible",
+      "__v": 0,
+      "id": "dec8"
     }
   ]
 }

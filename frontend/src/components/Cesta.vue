@@ -1,6 +1,9 @@
 <template>
   <div class="container mt-4">
-    <h3>Tu Cesta</h3>
+    <div class="d-flex align-items-center mb-3">
+      <img :src="logoEmpresa" alt="Logo Empresa" class="cesta-logo me-2" />
+      <h3 class="m-0">Tu Cesta</h3>
+    </div>
 
     <div v-if="items.length === 0" class="alert alert-info">Tu cesta está vacía.</div>
 
@@ -50,6 +53,8 @@ import { useRouter } from 'vue-router'
 import { computed, ref } from 'vue'
 import PaymentModal from './PaymentModal.vue'
 import BuyerDataModal from './BuyerDataModal.vue'
+import Swal from 'sweetalert2'
+import logoEmpresa from '@/assets/logoEmpresaTeis.svg'
 import placeholderImg from '@/assets/404.jpg'
 
 const cesta = useCestaStore()
@@ -104,19 +109,39 @@ function procederPago(){
     mensajeTimer = setTimeout(() => mensaje.value = '', 2500)
     return
   }
-  // si ya tenemos datos del comprador en sessionStorage, abrir el modal de pago
-  try{
-    const stored = sessionStorage.getItem('cliente')
-    if (stored) {
-      showPayment.value = true
+  // Require login before payment: if the user is not authenticated, redirect to login
+  try {
+    const token = sessionStorage.getItem('token')
+    const dni = sessionStorage.getItem('dni')
+    if (!token && !dni) {
+      // Informar al usuario y redirigir a login para que complete la autenticación
+      try {
+        Swal.fire({
+          icon: 'info',
+          title: 'Necesitas iniciar sesión',
+          text: 'Debes iniciar sesión para poder proceder al pago. Serás redirigido al login.',
+          showConfirmButton: true,
+        })
+      } catch (e) { /* noop */ }
+
+      // Añadir query de redirección para volver a la cesta tras login
+      try {
+        router.push({ path: '/login', query: { redirect: '/cesta' } })
+      } catch (e) {
+        console.warn('No se pudo redirigir a /login', e)
+      }
       return
     }
-  }catch(e){
-    // si falla el acceso a sessionStorage, caeremos al modal de captura igualmente
-    console.warn('No se pudo leer cliente de sessionStorage', e)
+
+    // Si está autenticado, abrir modal de pago directamente
+    showPayment.value = true
+    return
+  } catch (e) {
+    console.warn('Error comprobando sesión antes de pagar', e)
+    // En caso de error de lectura, fallback: redirigir al login
+    try { router.push({ path: '/login', query: { redirect: '/cesta' } }) } catch (er) { /* noop */ }
+    return
   }
-  // mostrar modal para pedir datos del comprador antes del pago
-  showBuyerModal.value = true
 }
 
 function onPagoCerrado(){
@@ -182,6 +207,10 @@ function onPagoRealizado(payload){
 
 <style scoped>
 img { border-radius:6px; }
+.cesta-logo {
+  width: 48px;
+  height: auto;
+}
 </style>
 
 

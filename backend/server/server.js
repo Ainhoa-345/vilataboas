@@ -5,6 +5,10 @@ import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
 
+// Determine __dirname early so dotenv can resolve the project root reliably
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 // a diferencia de json-server, aquí necesita configurar las rutas y controladores manualmente
 // json-server crea automáticamente las rutas basadas en el archivo JSON, mongoose requiere definir esquemas y modelos
 // MONGOSEE NO SABE NADA DE RUTAS CONTROLADRES Y MODELOS, HAY QUE CREARLOS MANUALMENTE
@@ -15,15 +19,36 @@ import chatRoutes from "./chatRoutes.js";
 import clientesRoutes from "./clientesRoutes.js";
 import contactoRoutes from "./contactoRoutes.js";
 import facturasRoutes from "./facturasRoutes.js";
+// paymentsRoutes is imported after dotenv is configured (see below)
 import fs from 'fs'
 import Factura from '../modelos/Factura.js'
+import Stripe from 'stripe'
 
+// First load environment from default location, then try the project root .env
 dotenv.config();
+try {
+    const rootEnv = path.resolve(__dirname, '..', '..', '.env')
+    dotenv.config({ path: rootEnv })
+    console.log('Loaded env from', rootEnv)
+} catch (e) {
+    console.warn('Could not load root .env explicitly:', e)
+}
+// Now dynamically import paymentsRoutes after environment variables are loaded
+// Use dynamic import so the module is evaluated after dotenv has injected process.env
+let paymentsRoutes
+try {
+    paymentsRoutes = (await import('./paymentsRoutes.js')).default
+} catch (e) {
+    console.error('Error importing paymentsRoutes:', e)
+    paymentsRoutes = null
+}
+console.log('paymentsRoutes loaded:', !!paymentsRoutes)
+try{
+    console.log('paymentsRoutes type:', typeof paymentsRoutes, 'has stack len:', paymentsRoutes && paymentsRoutes.stack && paymentsRoutes.stack.length)
+}catch(e){/* noop */}
 const app = express();
 const PORT = process.env.PORT || 5000;  // Use PORT from environment or default to 5000
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Middleware
@@ -39,6 +64,32 @@ app.use(cors({
 
 app.use(express.json());
 
+// Direct payments endpoint in server.js as a fallback (ensures route exists)
+const stripeKeyDirect = process.env.STRIPE_API_KEY
+if (!stripeKeyDirect) console.warn('STRIPE_API_KEY not set in environment (direct handler)')
+const stripeDirect = stripeKeyDirect ? new Stripe(stripeKeyDirect) : null
+
+app.post('/api/payments/create-checkout-session', async (req, res) => {
+    if (!stripeDirect) return res.status(500).json({ error: 'Stripe not configured' })
+    try{
+        const { amount, description } = req.body
+        if (!amount || isNaN(Number(amount))) return res.status(400).json({ error: 'Invalid amount' })
+        const amountCents = Math.round(Number(amount) * 100)
+        const YOUR_DOMAIN = process.env.FRONTEND_ORIGIN || 'http://localhost:5173'
+        const session = await stripeDirect.checkout.sessions.create({
+            payment_method_types: ['card'],
+            mode: 'payment',
+            line_items: [{ price_data: { currency: 'eur', product_data: { name: description || 'Compra Vilataboas' }, unit_amount: amountCents }, quantity: 1 }],
+            success_url: `${YOUR_DOMAIN}/factura?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${YOUR_DOMAIN}/cesta`,
+        })
+        return res.json({ url: session.url })
+    }catch(e){
+        console.error('Direct create-checkout-session error', e)
+        return res.status(500).json({ error: 'No se pudo crear la sesión de pago' })
+    }
+})
+
 // Rutas DE MONGOOSE, JSON SERVER NO ES NECESARIO LAS RUTAS LAS CREA AUTOMATICAMENTE
 // json-server es un backend ya construido.
 // Express es un backend que TÚ construyes.
@@ -49,6 +100,20 @@ app.use("/api/chat", chatRoutes);
 app.use("/api/clientes", clientesRoutes);
 app.use("/api/contacto", contactoRoutes);
 app.use("/api/facturas", facturasRoutes);
+app.use("/api/payments", paymentsRoutes);
+
+// Debug: list mounted routes (for troubleshooting why /api/payments might 404)
+try{
+    const routes = app._router && app._router.stack
+        ? app._router.stack
+            .filter(l => l && l.route && l.route.path)
+            .map(l => l.route.path)
+        : []
+    console.log('Mounted route paths:', routes)
+}catch(e){ console.warn('Could not list routes:', e) }
+
+// Temporary direct test endpoint to verify Express serves /api/payments/*
+app.get('/api/payments/hello', (req, res) => res.json({ ok: true, from: 'server direct' }))
 
 // Verificar variable
 //console.log("MONGODB_URI =", process.env.MONGODB_URI);
@@ -88,7 +153,7 @@ try{
                 serverSelectionTimeoutMS: 5000
         })
         .then(() => {
-                console.log(`Connected to MongoDB: ${sanitizedUri}`)
+                console.log(`Connected to MongoDB: ${sanitizedUri}`);
                 // al conectar, intentar vaciar el fichero de facturas pendientes si existe
                 (async function flushPending(){
                     try{

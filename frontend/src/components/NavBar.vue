@@ -42,8 +42,8 @@
         <button class="btn btn-outline-light btn-sm" type="submit" aria-label="Buscar interno"><i class="bi bi-search"></i></button>
       </form>
 
-  <!-- Cart icon linking to cesta (solo visible si hay sesión) -->
-  <router-link v-if="isLogueado" to="/cesta" class="text-white me-3 d-flex align-items-center cart-link" aria-label="Cesta de la compra">
+  <!-- Cart icon linking to cesta: visible para invitados y usuarios (permite acceder a la cesta como guest) -->
+  <router-link to="/cesta" class="text-white me-3 d-flex align-items-center cart-link" aria-label="Cesta de la compra">
           <i class="bi bi-cart3 cart-icon" aria-hidden="true"></i>
           <span v-if="totalItems > 0" class="badge bg-danger cart-badge">{{ totalItems }}</span>
         </router-link>

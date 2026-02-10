@@ -865,13 +865,20 @@ const buscarClientePorDNI = async (dni) => {
     console.log('Datos de mi perfil:', cliente); // <-- Añade esto
 
     if (!cliente) {
-      Swal.fire({
+      // Si no se encuentra en el backend, ofrecer ir a la búsqueda interna del sitio
+      const { isConfirmed } = await Swal.fire({
         icon: 'info',
         title: 'Cliente no encontrado',
-        text: 'No existe ningún cliente con ese DNI.',
-        timer: 1500,
-        showConfirmButton: false
+        text: 'No existe ningún cliente con ese DNI en nuestra base. ¿Desea buscar en todo el sitio?',
+        showCancelButton: true,
+        confirmButtonText: 'Buscar en el sitio',
+        cancelButtonText: 'Cerrar'
       });
+
+      if (isConfirmed) {
+        // Navegar al componente de búsqueda con el término
+        router.push({ path: '/buscar', query: { q: dni.trim().toUpperCase() } });
+      }
       return;
     }
 
@@ -895,6 +902,17 @@ const buscarClientePorDNI = async (dni) => {
     });
   } catch (error) {
     console.error('Error buscando cliente por DNI:', error);
+    const status = error?.response?.status;
+
+    // Si no está autenticado o hay error de acceso, ofrecer buscar en el sitio en lugar de abrir buscadores externos
+    if (status === 401 || status === 403 || !status) {
+      try {
+        await Swal.fire({ icon: 'info', title: 'Búsqueda interna', text: 'No está autenticada o no se puede acceder al servicio. Puede buscar en todo el sitio.', timer: 1200, showConfirmButton: false });
+      } catch (e) { /* ignorable */ }
+      router.push({ path: '/buscar', query: { q: dni.trim().toUpperCase() } });
+      return;
+    }
+
     Swal.fire({
       icon: 'error',
       title: 'Error al buscar cliente',
@@ -913,7 +931,19 @@ const buscarClientePorMovil = async (movil) => {
   try {
     const cliente = await getClientePorMovil(movil.trim());
     if (!cliente) {
-      Swal.fire({ icon: 'info', title: 'Cliente no encontrado', text: 'No existe ningún cliente con ese móvil.', timer: 1500, showConfirmButton: false });
+      // Ofrecer buscar el número en la búsqueda interna del sitio si no existe en la base de datos
+      const { isConfirmed } = await Swal.fire({
+        icon: 'info',
+        title: 'Cliente no encontrado',
+        text: 'No existe ningún cliente con ese móvil en nuestra base. ¿Desea buscar en todo el sitio?',
+        showCancelButton: true,
+        confirmButtonText: 'Buscar en el sitio',
+        cancelButtonText: 'Cerrar'
+      });
+
+      if (isConfirmed) {
+        router.push({ path: '/buscar', query: { q: movil.trim() } });
+      }
       return;
     }
 
@@ -928,6 +958,17 @@ const buscarClientePorMovil = async (movil) => {
     Swal.fire({ icon: 'success', title: 'Cliente encontrado y cargado', timer: 1500, showConfirmButton: false });
   } catch (error) {
     console.error('Error buscando cliente por móvil:', error);
+    const status = error?.response?.status;
+
+    // Si no está autenticado o hay error de acceso, redirigir a la búsqueda interna del sitio
+    if (status === 401 || status === 403 || !status) {
+      try {
+        await Swal.fire({ icon: 'info', title: 'Búsqueda interna', text: 'No está autenticada o no se puede acceder al servicio. Puede buscar en todo el sitio.', timer: 1200, showConfirmButton: false });
+      } catch (e) { /* ignorable */ }
+      router.push({ path: '/buscar', query: { q: movil.trim() } });
+      return;
+    }
+
     Swal.fire({ icon: 'error', title: 'Error al buscar cliente', text: 'Verifique la conexión o contacte con el administrador.', timer: 2000, showConfirmButton: false });
   }
 };

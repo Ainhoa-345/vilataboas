@@ -29,6 +29,7 @@
     "resend": "^1.1.0",
   "nodemailer": "^6.9.4",
     "sweetalert2": "^11.23.0",
+  "stripe": "^12.0.0",
     "vue": "^3.5.18",
     "vue-router": "^4.6.3"
   },
