@@ -888,6 +888,7 @@
       },
       "fecha_publicacion": "2025-10-28T00:00:00.000Z",
       "estado": "disponible",
+      "stock": 5,
       "__v": 0,
       "id": "dec5"
     },
@@ -919,6 +920,7 @@
       },
       "fecha_publicacion": "2025-10-20T00:00:00.000Z",
       "estado": "reservado",
+      "stock": 0,
       "__v": 0,
       "id": "dec6"
     },
@@ -950,6 +952,7 @@
       },
       "fecha_publicacion": "2025-09-15T00:00:00.000Z",
       "estado": "vendido",
+      "stock": 5,
       "__v": 0,
       "id": "dec7"
     },
@@ -981,6 +984,7 @@
       },
       "fecha_publicacion": "2025-08-10T00:00:00.000Z",
       "estado": "disponible",
+      "stock": 5,
       "__v": 0,
       "id": "dec8"
     }

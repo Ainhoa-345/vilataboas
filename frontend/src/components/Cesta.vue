@@ -56,6 +56,10 @@ import BuyerDataModal from './BuyerDataModal.vue'
 import Swal from 'sweetalert2'
 import logoEmpresa from '@/assets/logoEmpresaTeis.svg'
 import placeholderImg from '@/assets/404.jpg'
+// ============================================== 
+// IMPORTAR FUNCIÓN PARA ACTUALIZAR STOCK
+// ============================================== 
+import { restarStockMultiple } from '@/api/articulos'
 
 const cesta = useCestaStore()
 const router = useRouter()
@@ -162,6 +166,28 @@ function onPagoFinanciacion(){
   }catch(e){
     console.warn('No se pudo preparar snapshot para financiación', e)
   }
+  
+  // ============================================== 
+  // ACTUALIZAR STOCK TRAS FINANCIACIÓN
+  // ============================================== 
+  /**
+   * Restamos el stock de cada artículo comprado.
+   * Se hace de forma asíncrona pero no bloqueamos la navegación.
+   */
+  try {
+    const itemsParaActualizar = cesta.items.map(item => ({
+      id: item.id,
+      cantidad: item.cantidad || 1
+    }));
+    // Llamar sin await para no bloquear
+    restarStockMultiple(itemsParaActualizar)
+      .then(() => console.log('Stock actualizado tras financiación'))
+      .catch(err => console.warn('Error actualizando stock:', err));
+  } catch (e) {
+    console.warn('Error preparando actualización de stock:', e);
+  }
+  // ==============================================
+  
   // vaciar la cesta localmente ahora que hemos guardado un snapshot
   cesta.clearCesta()
   router.push('/factura')
@@ -190,6 +216,27 @@ function onPagoRealizado(payload){
   }catch(e){
     console.warn('No se pudo guardar snapshot de pago en sessionStorage', e)
   }
+
+  // ============================================== 
+  // ACTUALIZAR STOCK TRAS PAGO REALIZADO
+  // ============================================== 
+  /**
+   * Restamos el stock de cada artículo comprado.
+   * Se hace de forma asíncrona pero no bloqueamos la navegación.
+   */
+  try {
+    const itemsParaActualizar = cesta.items.map(item => ({
+      id: item.id,
+      cantidad: item.cantidad || 1
+    }));
+    // Llamar sin await para no bloquear
+    restarStockMultiple(itemsParaActualizar)
+      .then(() => console.log('Stock actualizado tras pago'))
+      .catch(err => console.warn('Error actualizando stock:', err));
+  } catch (e) {
+    console.warn('Error preparando actualización de stock:', e);
+  }
+  // ==============================================
 
   cesta.clearCesta()
   mensaje.value = `Pago realizado (${payload.metodo}). Ref: ${payload.referencia}`

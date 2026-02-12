@@ -14,6 +14,10 @@ import Buscar from "../components/BusCar.vue";
 import Cesta from "../components/Cesta.vue";
 import Factura from "../components/Factura.vue";
 import Perfil from "../components/Perfil.vue";
+// ============================================== 
+// IMPORTAR COMPONENTE DE GESTIÓN DE RESERVAS
+// ============================================== 
+import GestionReservas from "../components/GestionReservas.vue";
 
 const routes = [
     {
@@ -91,6 +95,19 @@ const routes = [
         name: 'Buscar',
         component: Buscar
     },
+    // ============================================== 
+    // RUTA PARA GESTIÓN DE RESERVAS (SOLO ADMIN)
+    // ============================================== 
+    {
+        path: '/reservas',
+        name: 'GestionReservas',
+        component: GestionReservas,
+        meta: {
+            requiresAuth: true,
+            requiresAdmin: true
+        }
+    },
+    // ==============================================
     {
         path: '/:pathMatch(.*)*',
         name: 'NotFound',

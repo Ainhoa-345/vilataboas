@@ -67,8 +67,29 @@
         </table>
 
         <div class="invoice-totals">
-          <div class="tot-row"><span>Subtotal:</span><strong>{{ formatPrecio(subtotal) }}</strong></div>
+          <!-- Subtotal de artículos (sin descuento) -->
+          <div class="tot-row"><span>Subtotal artículos:</span><strong>{{ formatPrecio(totalSinDescuento) }}</strong></div>
+          
+          <!-- ============================================== -->
+          <!-- LÍNEA DE DESCUENTO DEL CUPÓN (si existe)      -->
+          <!-- ============================================== -->
+          <!-- 
+            Esta línea solo se muestra si hay un cupón aplicado
+            - v-if="cuponInfo" comprueba si existe info del cupón
+            - Muestra el código del cupón y el descuento en euros
+            - El texto aparece en verde para destacar el ahorro
+          -->
+          <div v-if="cuponInfo" class="tot-row descuento-cupon">
+            <span>Descuento cupón ({{ cuponInfo.codigo }}):</span>
+            <strong class="texto-descuento">-{{ formatPrecio(descuentoCupon) }}</strong>
+          </div>
+          <!-- ============================================== -->
+          
+          <!-- Base imponible (subtotal sin IVA) -->
+          <div class="tot-row"><span>Base imponible:</span><strong>{{ formatPrecio(subtotal) }}</strong></div>
+          <!-- IVA -->
           <div class="tot-row"><span>IVA (21%):</span><strong>{{ formatPrecio(iva) }}</strong></div>
+          <!-- Total final -->
          <div class="tot-row total"><span>TOTAL:</span><strong>{{ formatPrecio(total) }}</strong></div>
         </div>
 
@@ -156,9 +177,39 @@ const savedKey = `facturaSaved_${facturaId}`
 // copia local de items para enriquecer con datos del backend si falta info del vehículo
 const invoiceItems = ref([])
 
+// ============================================== 
+// VARIABLES PARA MOSTRAR EL CUPÓN EN LA FACTURA
+// ============================================== 
+/**
+ * cuponInfo: Información del cupón aplicado
+ * - Se carga desde sessionStorage al montar el componente
+ * - Contiene: codigo, descuento, tipo, valor
+ */
+const cuponInfo = ref(null)
+
+/**
+ * descuentoCupon: El descuento en euros que se aplicó
+ * - Se lee del cuponInfo.descuento
+ */
+const descuentoCupon = computed(() => {
+  if (!cuponInfo.value) return 0
+  return cuponInfo.value.descuento || 0
+})
+// ==============================================
+
 // total (precio mostrado en los items) — se asume que incluye IVA
-const total = computed(()=>{
+// MODIFICADO: Ahora es el total ANTES de aplicar el descuento del cupón
+const totalSinDescuento = computed(()=>{
   return invoiceItems.value.reduce((s,it)=> s + (it.precio * (it.cantidad || 1)), 0)
+})
+
+/**
+ * total: Precio final con el descuento del cupón aplicado
+ * - Si hay cupón, resta el descuento
+ * - Si no hay cupón, es igual al totalSinDescuento
+ */
+const total = computed(()=>{
+  return totalSinDescuento.value - descuentoCupon.value
 })
 
 // Si el precio de venta incluye IVA, extraemos la base imponible (subtotal sin IVA)
@@ -167,6 +218,24 @@ const subtotal = computed(()=> Math.round((total.value / 1.21) * 100) / 100)
 const iva = computed(()=> Math.round((total.value - subtotal.value) * 100) / 100)
 
 onMounted(async ()=>{
+  // ============================================== 
+  // CARGAR INFORMACIÓN DEL CUPÓN DESDE SESSIONSTORAGE
+  // ============================================== 
+  /**
+   * Intentamos recuperar la info del cupón que se guardó
+   * en PaymentModal antes de proceder al pago
+   */
+  try{
+    const cuponRaw = sessionStorage.getItem('cuponInfo')
+    if (cuponRaw){
+      cuponInfo.value = JSON.parse(cuponRaw)
+      console.log('Cupón cargado en factura:', cuponInfo.value)
+    }
+  }catch(e){
+    console.warn('No se pudo cargar información del cupón', e)
+  }
+  // ==============================================
+
   // intentar cargar cliente desde sessionStorage (guardado por BuyerDataModal)
   try{
     const raw = sessionStorage.getItem('cliente')
@@ -455,4 +524,30 @@ function volver(){
 .tot-row{ width:320px; display:flex; justify-content:space-between; }
 .tot-row.total{ font-size:1.1em; font-weight:700 }
 .invoice-footer{ margin-top:18px; color:#666; font-size:0.9em; }
+
+/* ============================================== */
+/* ESTILOS PARA EL DESCUENTO DEL CUPÓN EN FACTURA*/
+/* ============================================== */
+
+/**
+ * Línea de descuento del cupón
+ * - Color verde para indicar ahorro
+ * - Mismo ancho que las demás líneas de totales
+ */
+.descuento-cupon {
+  color: #198754;  /* Verde Bootstrap success */
+}
+
+/**
+ * Texto del descuento con el signo negativo
+ * - Negrita para destacar
+ */
+.texto-descuento {
+  color: #198754;
+  font-weight: 600;
+}
+
+/* ============================================== */
+/* FIN ESTILOS CUPÓN FACTURA                     */
+/* ============================================== */
 </style>
