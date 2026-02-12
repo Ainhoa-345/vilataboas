@@ -2,24 +2,24 @@ import express from 'express'
 import Stripe from 'stripe'
 const router = express.Router()
 
-// use STRIPE_API_KEY from env
+// Usar STRIPE_API_KEY desde las variables de entorno
 const stripeKey = process.env.STRIPE_API_KEY
-if (!stripeKey) console.warn('STRIPE_API_KEY not set in environment')
+if (!stripeKey) console.warn('STRIPE_API_KEY no está configurada en las variables de entorno')
 const stripe = new Stripe(stripeKey)
 
-// Create a Checkout Session using the amount passed from the frontend.
-// Expects body: { amount: <number in EUR, e.g. 123.45>, description?: string }
+// Crear una sesión de Checkout usando el monto pasado desde el frontend.
+// Espera body: { amount: <número en EUR, ej. 123.45>, description?: string }
 router.post('/create-checkout-session', async (req, res) => {
   try {
     const { amount, description } = req.body
     if (!amount || isNaN(Number(amount))) {
-      return res.status(400).json({ error: 'Invalid amount' })
+      return res.status(400).json({ error: 'Monto inválido' })
     }
 
     const amountCents = Math.round(Number(amount) * 100)
 
-    // Build a minimal checkout session with a single line item for the total amount.
-    // In a real shop you'd send the itemized cart and create price_data per item.
+    // Construir una sesión de checkout mínima con un solo artículo por el monto total.
+    // En una tienda real enviarías el carrito detallado y crearías price_data por cada artículo.
     const YOUR_DOMAIN = process.env.FRONTEND_ORIGIN || 'http://localhost:5173'
 
     const session = await stripe.checkout.sessions.create({
@@ -43,53 +43,53 @@ router.post('/create-checkout-session', async (req, res) => {
 
     return res.json({ url: session.url })
   } catch (err) {
-    console.error('create-checkout-session error', err)
+    console.error('Error en create-checkout-session', err)
     return res.status(500).json({ error: 'No se pudo crear la sesión de pago' })
   }
 })
 
-// Health / quick check route to ensure the router is mounted and reachable
+// Ruta de verificación rápida para asegurar que el router está montado y accesible
 router.get('/', (req, res) => {
-  res.json({ ok: true, msg: 'payments route OK' })
+  res.json({ ok: true, msg: 'Ruta de pagos OK' })
 })
 
-// GET: Retrieve a Checkout Session (used after Stripe redirects back with session_id)
+// GET: Recuperar una sesión de Checkout (usada después de que Stripe redirige con session_id)
 // Query: ?session_id=<CHECKOUT_SESSION_ID>
 router.get('/session', async (req, res) => {
   try {
     const sessionId = req.query.session_id || req.query.sessionId || req.query.id
-    if (!sessionId) return res.status(400).json({ error: 'Missing session_id query param' })
+    if (!sessionId) return res.status(400).json({ error: 'Falta el parámetro session_id' })
 
-    if (!stripe) return res.status(500).json({ error: 'Stripe not configured on server' })
+    if (!stripe) return res.status(500).json({ error: 'Stripe no está configurado en el servidor' })
 
-    // Retrieve the session and expand payment_intent to get a stable reference
+    // Recuperar la sesión y expandir payment_intent para obtener una referencia estable
     const session = await stripe.checkout.sessions.retrieve(sessionId, { expand: ['payment_intent'] })
 
-    // Determine a friendly payment method for the frontend
-    const metodo = 'tarjeta' // checkout is configured with payment_method_types: ['card']
+    // Determinar un método de pago amigable para el frontend
+    const metodo = 'tarjeta' // checkout está configurado con payment_method_types: ['card']
     const referencia = (session.payment_intent && session.payment_intent.id) ? session.payment_intent.id : session.id
 
-    return res.json({ ok: true, metodo, referencia, status: session.payment_status || (session.payment_intent && session.payment_intent.status) || 'unknown' })
+    return res.json({ ok: true, metodo, referencia, status: session.payment_status || (session.payment_intent && session.payment_intent.status) || 'desconocido' })
   } catch (err) {
-    console.error('Error retrieving stripe session', err)
-    return res.status(500).json({ error: 'Could not retrieve session', details: err.message || err })
+    console.error('Error recuperando sesión de stripe', err)
+    return res.status(500).json({ error: 'No se pudo recuperar la sesión', details: err.message || err })
   }
 })
 
-// Alternate route that accepts the session id as a path parameter (useful in some dev setups)
+// Ruta alternativa que acepta el id de sesión como parámetro de ruta (útil en algunas configuraciones de desarrollo)
 router.get('/session/:id', async (req, res) => {
   try{
     const sessionId = req.params.id
-    if (!sessionId) return res.status(400).json({ error: 'Missing session id param' })
-    console.log('paymentsRoutes: retrieving session by path param', sessionId)
-    if (!stripe) return res.status(500).json({ error: 'Stripe not configured on server' })
+    if (!sessionId) return res.status(400).json({ error: 'Falta el parámetro id de sesión' })
+    console.log('paymentsRoutes: recuperando sesión por parámetro de ruta', sessionId)
+    if (!stripe) return res.status(500).json({ error: 'Stripe no está configurado en el servidor' })
     const session = await stripe.checkout.sessions.retrieve(sessionId, { expand: ['payment_intent'] })
     const metodo = 'tarjeta'
     const referencia = (session.payment_intent && session.payment_intent.id) ? session.payment_intent.id : session.id
-    return res.json({ ok: true, metodo, referencia, status: session.payment_status || (session.payment_intent && session.payment_intent.status) || 'unknown' })
+    return res.json({ ok: true, metodo, referencia, status: session.payment_status || (session.payment_intent && session.payment_intent.status) || 'desconocido' })
   }catch(err){
-    console.error('Error retrieving stripe session (path param)', err)
-    return res.status(500).json({ error: 'Could not retrieve session', details: err.message || err })
+    console.error('Error recuperando sesión de stripe (parámetro de ruta)', err)
+    return res.status(500).json({ error: 'No se pudo recuperar la sesión', details: err.message || err })
   }
 })
 

@@ -26,8 +26,8 @@ export const loginUsuario = async (dni, password) => {
 export const checkAdmin = async () => {
   try {
     const token = sessionStorage.getItem('token');
-    // DEV shortcut: if running locally you can set sessionStorage token = 'dev-admin'
-    // to be treated as admin without a backend check. This is for local development only.
+    // Atajo DEV: si ejecutas localmente puedes establecer sessionStorage token = 'dev-admin'
+    // para ser tratado como admin sin verificación del backend. Solo para desarrollo local.
     if (token === 'dev-admin') {
       return { isAdmin: true, name: 'Admin (dev)' };
     }
@@ -58,12 +58,12 @@ export const registerUsuario = async (payload) => {
     const res = await axios.post("/api/clientes", payload);
     return res.data;
   } catch (err) {
-    // If the request to /api/clientes returned a validation error (400) or a
-    // conflict (409), rethrow so the caller can surface the field-specific
-    // message. Only attempt fallbacks when the endpoint itself wasn't found (404)
-    // or there was a network error.
+    // Si la petición a /api/clientes devolvió un error de validación (400) o un
+    // conflicto (409), relanzar para que el llamador pueda mostrar el mensaje
+    // específico del campo. Solo intentar fallbacks cuando el endpoint no se
+    // encontró (404) o hubo un error de red.
     if (err && err.response && err.response.status && err.response.status !== 404) {
-      // rethrow validation/conflict/other server errors to be handled by the caller
+      // relanzar errores de validación/conflicto/otros del servidor para que los maneje el llamador
       throw err;
     }
 

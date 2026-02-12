@@ -26,7 +26,7 @@ const articuloSchema = new mongoose.Schema({
   fecha_publicacion: { type: Date, default: Date.now },
   estado: { type: String, default: 'disponible' },
   matricula: { type: String, required: false },
-  // Campos legacy para compatibilidad
+  // Campos heredados (legacy) para compatibilidad
   titulo: { type: String, required: false },
   createdAt: { type: Date, default: Date.now }
 }, { strict: false }); // strict: false permite campos adicionales no definidos

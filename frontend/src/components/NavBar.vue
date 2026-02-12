@@ -119,8 +119,8 @@ function searchInternal() {
 
 function logout() {
   try {
-    // Preserve the current user's cesta so it is not lost on logout.
-    // Use DNI as stable identifier; fall back to token for compatibility.
+    // Preservar la cesta del usuario actual para que no se pierda al cerrar sesión.
+    // Usar DNI como identificador estable; usar token como respaldo por compatibilidad.
     const dni = sessionStorage.getItem('dni');
     const token = sessionStorage.getItem('token');
     const userId = dni || token;
@@ -129,27 +129,27 @@ function logout() {
       const userRaw = localStorage.getItem(userKey);
 
       if (userRaw) {
-        // Only copy the user's cesta to guest if there is no guest cesta yet.
-        // Avoid merging/summing quantities to prevent duplicates when the user
-        // logs out and logs back in repeatedly (that would double counts).
+        // Solo copiar la cesta del usuario a invitado si no existe una cesta de invitado.
+        // Evitar mezclar/sumar cantidades para prevenir duplicados cuando el usuario
+        // cierra sesión y vuelve a iniciarla repetidamente (eso duplicaría los conteos).
         const guestRaw = localStorage.getItem('cesta_guest');
         if (!guestRaw) {
           try {
             localStorage.setItem('cesta_guest', userRaw);
           } catch (e) {
-            console.warn('logout: error copying user cesta to guest', e);
+            console.warn('logout: error copiando cesta de usuario a invitado', e);
           }
         } else {
-          // If guest cart already exists, do not merge to avoid repeated doubling.
-          // We intentionally leave guest cart untouched.
+          // Si la cesta de invitado ya existe, no mezclar para evitar duplicación repetida.
+          // Dejamos intencionalmente la cesta de invitado sin tocar.
         }
       }
     }
   } catch (e) {
-    console.warn('logout: error preserving cesta', e);
+    console.warn('logout: error preservando cesta', e);
   }
 
-  // Remove only session identifiers; do NOT delete localStorage cesta entries so user's cart persists
+  // Eliminar solo identificadores de sesión; NO borrar entradas de cesta en localStorage para que persista
   sessionStorage.removeItem('token')
   sessionStorage.removeItem('userName')
   sessionStorage.removeItem('dni')
@@ -157,7 +157,7 @@ function logout() {
   isLogueado.value = false
   userName.value = ''
 
-  // Refresh to reflect logout state
+  // Recargar para reflejar el estado de cierre de sesión
   window.location.href = '/'
 }
 
@@ -192,21 +192,21 @@ function goPerfil() {
   width: 45px;
 }
 
-/* User icon in navbar dropdown button */
+/* Icono de usuario en el botón desplegable del navbar */
 .nav-user-icon {
   width: 34px;
   height: 34px;
-  color: white; /* uses currentColor fill */
+  color: white; /* usa currentColor como relleno */
 }
 
 .btn.btn-primary.dropdown-toggle .nav-user-icon {
-  /* ensure icon contrasts on primary button */
+  /* asegurar que el icono contraste en el botón primario */
   color: white;
 }
 
-/* Cart: make same size as user icon and position left of it */
+/* Carrito: mismo tamaño que el icono de usuario y posicionado a su izquierda */
 .cart-link {
-  /* Rounded square container behind the cart icon */
+  /* Contenedor cuadrado redondeado detrás del icono del carrito */
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -253,9 +253,9 @@ function goPerfil() {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: #ff3b30; /* bright red */
+  background: #ff3b30; /* rojo brillante */
   color: white;
-  border: 2px solid white; /* small white border to separate from blue background */
+  border: 2px solid white; /* pequeño borde blanco para separar del fondo azul */
 }
 
 @media (max-width: 576px) {

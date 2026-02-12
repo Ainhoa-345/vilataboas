@@ -109,7 +109,7 @@ function procederPago(){
     mensajeTimer = setTimeout(() => mensaje.value = '', 2500)
     return
   }
-  // Require login before payment: if the user is not authenticated, redirect to login
+  // Requerir login antes del pago: si el usuario no está autenticado, redirigir a login
   try {
     const token = sessionStorage.getItem('token')
     const dni = sessionStorage.getItem('dni')
@@ -122,7 +122,7 @@ function procederPago(){
           text: 'Debes iniciar sesión para poder proceder al pago. Serás redirigido al login.',
           showConfirmButton: true,
         })
-      } catch (e) { /* noop */ }
+      } catch (e) { /* ignorar */ }
 
       // Añadir query de redirección para volver a la cesta tras login
       try {
@@ -138,8 +138,8 @@ function procederPago(){
     return
   } catch (e) {
     console.warn('Error comprobando sesión antes de pagar', e)
-    // En caso de error de lectura, fallback: redirigir al login
-    try { router.push({ path: '/login', query: { redirect: '/cesta' } }) } catch (er) { /* noop */ }
+    // En caso de error de lectura, respaldo: redirigir al login
+    try { router.push({ path: '/login', query: { redirect: '/cesta' } }) } catch (er) { /* ignorar */ }
     return
   }
 }
@@ -149,7 +149,7 @@ function onPagoCerrado(){
 }
 
 function onPagoFinanciacion(){
-  // preparar snapshot para la factura (Factua.vue lo leerá desde sessionStorage), vaciar la cesta y navegar
+  // preparar snapshot para la factura (Factura.vue lo leerá desde sessionStorage), vaciar la cesta y navegar
   showPayment.value = false
   try{
     // guardar snapshot de items para que Factura pueda renderizar incluso después de vaciar la cesta
@@ -168,7 +168,7 @@ function onPagoFinanciacion(){
 }
 
 function onBuyerSaved(cliente){
-  // cerrar modal de buyer y abrir modal de pago
+  // cerrar modal de comprador y abrir modal de pago
   showBuyerModal.value = false
   showPayment.value = true
   try{

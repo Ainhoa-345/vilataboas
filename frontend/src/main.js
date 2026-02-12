@@ -12,10 +12,10 @@ import 'sweetalert2/dist/sweetalert2.min.css'
 const app = createApp(App)
 const pinia = createPinia()
 
-// Remove or neutralize any dynamically-inserted <link rel="preload"> tags that use an
-// unsupported `as` value. Some third-party widgets (Stripe/hCaptcha) may inject
-// malformed preload links which trigger console warnings. This proactively removes
-// such links to keep the console clean and avoid unexpected preload behavior.
+// Eliminar o neutralizar cualquier etiqueta <link rel="preload"> insertada dinámicamente que use un
+// valor `as` no soportado. Algunos widgets de terceros (Stripe/hCaptcha) pueden inyectar
+// enlaces preload malformados que generan warnings en consola. Esto los elimina proactivamente
+// para mantener la consola limpia y evitar comportamiento de precarga inesperado.
 ;(function sanitizePreloadLinks(){
 	const allowed = new Set(['script','style','image','font','fetch','document','embed','object','worker','audio','video','track'])
 
@@ -24,15 +24,15 @@ const pinia = createPinia()
 			if (!link || link.rel !== 'preload') return
 			const as = (link.getAttribute('as') || '').toLowerCase()
 			if (as && allowed.has(as)) return
-			// if `as` is empty or not allowed, remove the element to avoid browser warnings
+			// si `as` está vacío o no es permitido, eliminar el elemento para evitar warnings del navegador
 			link.parentNode && link.parentNode.removeChild(link)
-		}catch(e){ /* ignore */ }
+		}catch(e){ /* ignorar */ }
 	}
 
-	// Clean existing preload links
+	// Limpiar enlaces preload existentes
 	document.querySelectorAll && document.querySelectorAll('link[rel="preload"]').forEach(clean)
 
-	// Observe for newly added links (third-party scripts may add them later)
+	// Observar enlaces añadidos posteriormente (scripts de terceros pueden añadirlos después)
 	try{
 		const mo = new MutationObserver(muts => {
 			for (const m of muts) {
@@ -42,7 +42,7 @@ const pinia = createPinia()
 			}
 		})
 		mo.observe(document.head || document.documentElement, { childList: true, subtree: true })
-	}catch(e){ /* older browsers may not support MutationObserver */ }
+	}catch(e){ /* navegadores antiguos pueden no soportar MutationObserver */ }
 })()
 
 app.use(pinia)
@@ -51,6 +51,6 @@ app.use(router)
 import { useCestaStore } from '@/store/cesta'
 const store = useCestaStore(pinia)
 // hydrateItems puede realizar peticiones; llamar sin await para no bloquear arranque
-store.hydrateItems().catch(err => console.warn('Error hydrating cesta', err))
+store.hydrateItems().catch(err => console.warn('Error al hidratar la cesta', err))
 
 app.mount('#app')

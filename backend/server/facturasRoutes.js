@@ -118,7 +118,7 @@ router.patch('/:id/eliminar', async (req, res) => {
   }
 });
 
-// ------------ Helper: pending file for offline persistence ------------
+// ------------ Helper: archivo pendiente para persistencia offline ------------
 const PENDING_FILE = path.join(path.dirname(new URL(import.meta.url).pathname), '..', 'data', 'pending_facturas.json')
 
 function ensurePendingFile(){
@@ -126,7 +126,7 @@ function ensurePendingFile(){
     const dir = path.dirname(PENDING_FILE)
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
     if (!fs.existsSync(PENDING_FILE)) fs.writeFileSync(PENDING_FILE, '[]', 'utf8')
-  }catch(e){ console.warn('Could not ensure pending file', e) }
+  }catch(e){ console.warn('No se pudo asegurar el archivo pendiente', e) }
 }
 
 // POST: crear una factura (resiliente: intenta MongoDB, luego json-server, luego disco)
@@ -174,7 +174,7 @@ router.post('/', async (req, res) => {
     // Si Mongo está conectado, guardar ahí
     if (mongoose.connection && mongoose.connection.readyState === 1){
       const created = await Factura.create(doc)
-      console.info('Factura saved to MongoDB', { id: created._id?.toString?.(), transaccionId: created.transaccionId })
+      console.info('Factura guardada en MongoDB', { id: created._id?.toString?.(), transaccionId: created.transaccionId })
       return res.status(201).json({ status: 'saved_db', location: 'db', id: created._id, transaccionId: created.transaccionId, factura: created })
     }
 
@@ -213,28 +213,28 @@ router.post('/', async (req, res) => {
       })
 
       let parsedBody = forwardedResp.body
-      try{ parsedBody = JSON.parse(forwardedResp.body) }catch(e){ /* keep raw */ }
-      console.info('Factura forwarded to json-server', { statusCode: forwardedResp.statusCode, transaccionId: doc.transaccionId })
+      try{ parsedBody = JSON.parse(forwardedResp.body) }catch(e){ /* mantener raw */ }
+      console.info('Factura reenviada a json-server', { statusCode: forwardedResp.statusCode, transaccionId: doc.transaccionId })
       return res.status(201).json({ status: 'saved_jsonserver', location: 'json-server', transaccionId: doc.transaccionId, forwardedStatus: forwardedResp.statusCode, forwardedBody: parsedBody })
     }catch(e){
-      // si falla, guardar en disco (pending file)
+      // si falla, guardar en disco (archivo pendiente)
       ensurePendingFile()
       try{
         const raw = fs.readFileSync(PENDING_FILE, 'utf8') || '[]'
         const arr = JSON.parse(raw || '[]')
         arr.push(doc)
         fs.writeFileSync(PENDING_FILE, JSON.stringify(arr, null, 2), 'utf8')
-        console.warn('Saved factura to pending file (no DB/json-server)', doc.transaccionId)
+        console.warn('Factura guardada en archivo pendiente (sin DB/json-server)', doc.transaccionId)
         return res.status(202).json({ status: 'saved_local', location: 'local-file', transaccionId: doc.transaccionId, pendingFile: PENDING_FILE, pendingCount: arr.length, message: 'Guardada localmente; se reintentará más tarde' })
       }catch(err){
-        console.error('Failed to write pending file', err)
+        console.error('Error al escribir archivo pendiente', err)
         return res.status(500).json({ error: 'No se pudo guardar la factura', details: err.message || err })
       }
     }
 
   }catch(error){
-    console.error('Error in POST /api/facturas:', error && (error.stack || error))
-    // devolver detalles para debugging en dev
+    console.error('Error en POST /api/facturas:', error && (error.stack || error))
+    // devolver detalles para depuración en desarrollo
     res.status(500).json({ error: error.message || 'Error guardando factura', details: error.stack || error })
   }
 })

@@ -8,8 +8,8 @@ export const useCestaStore = defineStore('cesta', {
         items: (function(){
             try{
                 if (typeof localStorage === 'undefined') return [];
-                // Use DNI as stable user identifier for the cesta key. Fall back to token
-                // for compatibility with older sessions.
+                // Usar DNI como identificador de usuario estable para la clave de la cesta. Fallback al token
+                // para compatibilidad con sesiones antiguas.
                 const dni = sessionStorage.getItem('dni');
                 const token = sessionStorage.getItem('token');
                 const userId = dni || token;

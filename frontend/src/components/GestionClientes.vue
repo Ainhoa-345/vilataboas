@@ -342,6 +342,7 @@ const clienteVacio = {
   municipio: "",
   fecha_alta: "",
   tipo_cliente: "",
+  tipoCliente: "particular",
   historico: false,
   lopd: false,
   password: "",
@@ -407,14 +408,14 @@ onMounted(async () => {
     numClientes.value = 0;
   }
 
-  // Attach a native click listener to the Vaciar button for debugging overlay/binding issues
+  // Adjuntar listener nativo de clic al botón Vaciar para depurar problemas de overlay/binding
   try {
     const vaciarEl = document.getElementById('vaciarBtn');
     if (vaciarEl) {
       vaciarEl.addEventListener('click', onNativeVaciarClick);
     }
   } catch (e) {
-    console.debug('onMounted: failed to attach native listener', e);
+    console.debug('onMounted: fallo al adjuntar listener nativo', e);
   }
 })
 
@@ -423,7 +424,7 @@ onUnmounted(() => {
     const vaciarEl = document.getElementById('vaciarBtn');
     if (vaciarEl) vaciarEl.removeEventListener('click', onNativeVaciarClick);
   } catch (e) {
-    console.debug('onUnmounted: failed to remove native listener', e);
+    console.debug('onUnmounted: fallo al eliminar listener nativo', e);
   }
 });
 
@@ -663,7 +664,7 @@ const imprimirListado = () => {
 
     const style = `
       <style>
-        /* Ensure printable layout and position for the logo */
+        /* Asegurar layout imprimible y posición para el logo */
         body{font-family:Arial,Helvetica,sans-serif;padding:16px;color:#222;position:relative}
         .logo-print{position:absolute;top:10px;right:10px;width:80px;height:auto}
         table{width:100%;border-collapse:collapse;margin-top:48px}
@@ -790,7 +791,12 @@ const eliminarCliente = async (id) => {
 const editarCliente = (id) => {
   const cliente = clientes.value.find((c) => String(c.id) === String(id));
   if (!cliente) return;
-  nuevoCliente.value = { ...cliente, password: "" };
+  nuevoCliente.value = { 
+    ...cliente, 
+    password: "",
+    // Mapear tipo_cliente del backend a tipoCliente del formulario
+    tipoCliente: cliente.tipo_cliente || 'particular'
+  };
   editando.value = true;
   clienteEditandoId.value = cliente.id;
   nuevoCliente.value.fecha_alta = formatearFechaParaInput(cliente.fecha_alta);
@@ -973,30 +979,30 @@ const buscarClientePorMovil = async (movil) => {
   }
 };
 const vaciarFormulario = async () => {
-  // Debug log to confirm handler execution
-  console.debug('vaciarFormulario: clearing form');
+  // Log de depuración para confirmar la ejecución del manejador
+  console.debug('vaciarFormulario: limpiando formulario');
 
-  // Reset the whole object in one go to ensure v-model bindings are cleared.
-  // Include both `tipoCliente` (used by the form) and `tipo_cliente` (used by backend)
+  // Reiniciar todo el objeto de una vez para asegurar que los v-model se limpien.
+  // Incluir tanto `tipoCliente` (usado por el formulario) como `tipo_cliente` (usado por el backend)
   nuevoCliente.value = {
     ...clienteVacio,
     tipoCliente: 'particular',
     tipo_cliente: clienteVacio.tipo_cliente || '',
   };
 
-  // Clear auxiliar UI state
+  // Limpiar estado auxiliar de la UI
   repetirPassword.value = "";
   editando.value = false;
   clienteEditandoId.value = null;
   municipiosFiltrados.value = [];
 
-  // Reset validation flags/messages
+  // Reiniciar flags/mensajes de validación
   dniValido.value = true;
   movilValido.value = true;
   emailValido.value = true;
   dniError.value = "";
 
-  // Small confirmation so the user sees the action executed
+  // Pequeña confirmación para que el usuario vea que la acción se ejecutó
   try {
     Swal.fire({
       icon: 'success',
@@ -1007,25 +1013,25 @@ const vaciarFormulario = async () => {
       position: 'top-end'
     });
   } catch (e) {
-    // noop if Swal isn't available for any reason
-    console.debug('vaciarFormulario: Swal not available', e);
+    // noop si Swal no está disponible por cualquier razón
+    console.debug('vaciarFormulario: Swal no disponible', e);
   }
 }
 
-// Wrapper click handler for the Vaciar button so we can detect click events
+// Manejador click envoltorio para el botón Vaciar para poder detectar eventos de clic
 const clearClicked = (event) => {
-  console.debug('clearClicked: Vaciar button clicked', event);
+  console.debug('clearClicked: Botón Vaciar clicado', event);
   try {
-    // call the async reset function but don't await here (it's fine either way)
+    // llamar a la función de reinicio async pero no esperar aquí (funciona de cualquier forma)
     vaciarFormulario();
   } catch (e) {
-    console.error('clearClicked: error calling vaciarFormulario', e);
+    console.error('clearClicked: error al llamar vaciarFormulario', e);
   }
 };
 
-// Native listener function used only for debugging to detect click events
+// Función listener nativa usada solo para depuración y detectar eventos de clic
 function onNativeVaciarClick(ev) {
-  console.debug('onNativeVaciarClick: native DOM click detected', ev);
+  console.debug('onNativeVaciarClick: clic DOM nativo detectado', ev);
 }
 
 /* =================================== SCRIPT AUXILIARES =================================== */

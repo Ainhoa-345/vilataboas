@@ -35,6 +35,16 @@
         </div>
       </form>
     </div>
+
+    <!-- Carteles de credenciales de prueba para desarrolladores -->
+    <div class="mt-4 w-100" style="max-width: 400px;">
+      <div class="alert alert-info mb-2">
+        <strong><i class="bi bi-shield-lock me-1"></i> ADMIN:</strong> DNI: <code>12345678A</code> | Contraseña: <code>abc1234</code>
+      </div>
+      <div class="alert alert-secondary">
+        <strong><i class="bi bi-person me-1"></i> USER:</strong> DNI: <code>48271639K</code> | Contraseña: <code>prueba</code>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -116,7 +126,7 @@ export default {
                   const oldItems = JSON.parse(oldRaw || '[]');
                   const newRawExisting = localStorage.getItem(newKey);
                   const newItemsExisting = newRawExisting ? JSON.parse(newRawExisting || '[]') : [];
-                  // merge oldItems into newItemsExisting
+                  // fusionar oldItems en newItemsExisting
                   const map = new Map();
                   for (const it of newItemsExisting) {
                     if (!it || !it.id) continue;
@@ -135,10 +145,10 @@ export default {
                   const merged = Array.from(map.values());
                   localStorage.setItem(newKey, JSON.stringify(merged));
                 } catch (e) {
-                  // parsing error: fallback to moving the raw value
+                  // error de parsing: fallback a mover el valor raw
                   localStorage.setItem(newKey, oldRaw);
                 }
-                // remove old key after migration
+                // eliminar clave antigua tras la migración
                 try { localStorage.removeItem(oldKey); } catch (e) { /* noop */ }
               }
             }
@@ -158,13 +168,13 @@ export default {
             const guestItems = guestRaw ? JSON.parse(guestRaw || '[]') : [];
             const userItems = userRaw ? JSON.parse(userRaw || '[]') : [];
 
-            // Build map from userItems
+            // Construir mapa desde userItems
             const map = new Map();
             for (const it of userItems) {
               if (!it || !it.id) continue;
               map.set(it.id, { ...it });
             }
-            // Merge guest items, summing quantities
+            // Fusionar items de invitado, sumando cantidades
             for (const it of guestItems) {
               if (!it || !it.id) continue;
               if (map.has(it.id)) {

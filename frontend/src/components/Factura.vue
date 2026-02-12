@@ -102,7 +102,7 @@ const cesta = useCestaStore()
 const items = computed(()=>cesta.items)
 const totalPrecio = computed(()=>cesta.totalPrecio)
 
-// store a raw ISO date for payloads, and present a localized European formatted date to the user
+// almacenar fecha ISO sin procesar para envíos, y presentar fecha formateada europea al usuario
 const fechaRaw = new Date().toISOString()
 const fecha = (function(){
   try{
@@ -113,15 +113,15 @@ const fecha = (function(){
 })()
 const facturaId = 'FAC-' + Date.now().toString(16)
 const cliente = ref({ nombre: '', nif:'', email:'', telefono:'', direccion:'' })
-// default empty; will be set from sessionStorage (paidInfo) or Stripe session if present
+// vacío por defecto; se establecerá desde sessionStorage (paidInfo) o sesión de Stripe si está presente
 const metodoPago = ref('')
 
-// Presentational mapping for the UI (human-friendly Spanish labels)
+// Mapeo para presentación en la interfaz (etiquetas amigables en español)
 const metodoPagoPresent = computed(() => {
   try{
     const raw = (metodoPago.value || '').toString().toLowerCase()
     if (!raw){
-      // fallback: try sessionStorage paidInfo
+      // respaldo: intentar sessionStorage paidInfo
       try{
         const paidRaw = sessionStorage.getItem('paidInfo')
         if (paidRaw){
@@ -142,7 +142,7 @@ function humanizeMetodo(val){
   if (val.includes('financi')) return 'Financiación'
   if (val.includes('paypal') || val.includes('pay')) return 'PayPal'
   if (val.includes('efectivo')) return 'Efectivo'
-  // default: capitalize first
+  // por defecto: capitalizar primera letra
   return val.charAt(0).toUpperCase() + val.slice(1)
 }
 
@@ -215,29 +215,29 @@ onMounted(async ()=>{
 
   // si hay información de pago guardada, usarla
   try{
-    // First: check if Stripe redirected back with a session_id in the URL
+    // Primero: comprobar si Stripe redirigió de vuelta con session_id en la URL
     try{
       const params = new URLSearchParams(window.location.search)
       const sid = params.get('session_id') || params.get('sessionId')
       if (sid){
-        // ask backend for session details (paymentsRoutes will resolve to metodo: 'tarjeta')
+        // pedir al backend detalles de la sesión (paymentsRoutes resolverá a metodo: 'tarjeta')
         try{
-          // Helper to attempt a fetch and return parsed JSON if ok
+          // Función auxiliar para intentar fetch y devolver JSON parseado si es exitoso
           async function tryFetch(url){
             try{
               const r = await fetch(url)
               if (r && r.ok) return await r.json()
-            }catch(e){ /* ignore */ }
+            }catch(e){ /* ignorar */ }
             return null
           }
 
-          // Try a series of endpoints in order of likelihood to work in dev and prod
+          // Probar una serie de endpoints en orden de probabilidad de funcionar en dev y prod
           const tried = []
-          // 1) relative query param (works when Vite proxies /api -> backend)
+          // 1) parámetro query relativo (funciona cuando Vite hace proxy /api -> backend)
           tried.push(`/api/payments/session?session_id=${encodeURIComponent(sid)}`)
-          // 2) relative path-param (some setups strip query strings)
+          // 2) parámetro de ruta relativo (algunas configuraciones eliminan query strings)
           tried.push(`/api/payments/session/${encodeURIComponent(sid)}`)
-          // 3) direct backend origin (in case the dev proxy is not active)
+          // 3) origen directo del backend (en caso de que el proxy de dev no esté activo)
           const backend = (window.__BACKEND_ORIGIN__ || 'http://localhost:5000')
           tried.push(`${backend}/api/payments/session?session_id=${encodeURIComponent(sid)}`)
           tried.push(`${backend}/api/payments/session/${encodeURIComponent(sid)}`)
@@ -246,7 +246,7 @@ onMounted(async ()=>{
           for (const url of tried){
             info = await tryFetch(url)
             if (info) {
-              // console.debug('Recovered stripe session info from', url, info)
+              // console.debug('Recuperada info de sesión stripe desde', url, info)
               break
             }
           }
@@ -255,13 +255,13 @@ onMounted(async ()=>{
             metodoPago.value = info.metodo
             try{ sessionStorage.setItem('paidInfo', JSON.stringify({ metodo: info.metodo, referencia: info.referencia })) }catch(e){}
           } else {
-            console.warn('Could not retrieve stripe session info from tried endpoints', tried)
+            console.warn('No se pudo recuperar info de sesión stripe desde los endpoints probados', tried)
           }
-        }catch(e){ console.warn('Could not fetch stripe session info', e) }
+        }catch(e){ console.warn('No se pudo obtener info de sesión stripe', e) }
       }
-    }catch(e){ console.warn('Error parsing URL for session_id', e) }
+    }catch(e){ console.warn('Error al parsear URL para session_id', e) }
 
-    // Fallback: if there is already paidInfo in sessionStorage (transferencia/financiación/other)
+    // Respaldo: si ya hay paidInfo en sessionStorage (transferencia/financiación/otro)
     const paidRaw = sessionStorage.getItem('paidInfo')
     if (paidRaw){
       const paid = JSON.parse(paidRaw)
@@ -358,9 +358,9 @@ async function saveFactura(){
       return
     }
     const saved = await res.json().catch(()=>null)
-    // Backend ahora retorna { status, location, id?, transaccionId?, pendingFile?, pendingCount?, message?, forwardedStatus?, forwardedBody? }
+        // El backend ahora retorna { status, location, id?, transaccionId?, pendingFile?, pendingCount?, message?, forwardedStatus?, forwardedBody? }
     if (res.status === 201) {
-      // puede ser saved_db o saved_jsonserver
+      // puede ser guardado en db o en json-server
       if (saved && saved.location === 'db'){
         saveStatus.value = 'Guardada'
         saveMessage.value = `Factura guardada en la base de datos (id: ${saved.id || (saved.factura && saved.factura._id) || ''})`
@@ -381,7 +381,7 @@ async function saveFactura(){
       saveMessage.value = saved?.message || 'Factura procesada.'
     }
     // marcar en sessionStorage para evitar reenvíos desde la misma sesión
-    try{ sessionStorage.setItem(savedKey, '1') }catch(e){ /* ignore */ }
+    try{ sessionStorage.setItem(savedKey, '1') }catch(e){ /* ignorar */ }
     console.log('Factura guardada', saved)
   }catch(e){
     saveStatus.value = 'Error'
@@ -390,7 +390,7 @@ async function saveFactura(){
   }
 }
 
-// Watcher: guardar la factura automáticamente cuando invoiceItems esté listo
+// Observador: guardar la factura automáticamente cuando invoiceItems esté listo
 watch(invoiceItems, async (newVal) => {
   try{
     if (Array.isArray(newVal) && newVal.length > 0 && !sessionStorage.getItem(savedKey) && saveStatus.value !== 'Guardando' && saveStatus.value !== 'Guardada'){
@@ -423,7 +423,7 @@ function formatPrecio(v){
 async function generarPDF(){
   if (!invoiceRef.value) return
   const el = invoiceRef.value
-  // usar html2canvas para renderizar el DOM como imagen
+// usar html2canvas para renderizar el DOM como imagen
   const canvas = await html2canvas(el, { scale: 2, useCORS: true })
   const imgData = canvas.toDataURL('image/png')
   const pdf = new jsPDF('p', 'mm', 'a4')

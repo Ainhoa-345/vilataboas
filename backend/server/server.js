@@ -5,13 +5,13 @@ import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
 
-// Determine __dirname early so dotenv can resolve the project root reliably
+// Determinar __dirname temprano para que dotenv pueda resolver la raíz del proyecto de forma fiable
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // a diferencia de json-server, aquí necesita configurar las rutas y controladores manualmente
 // json-server crea automáticamente las rutas basadas en el archivo JSON, mongoose requiere definir esquemas y modelos
-// MONGOSEE NO SABE NADA DE RUTAS CONTROLADRES Y MODELOS, HAY QUE CREARLOS MANUALMENTE
+// MONGOOSE NO SABE NADA DE RUTAS CONTROLADORES Y MODELOS, HAY QUE CREARLOS MANUALMENTE
 
 import articulosRoutes from "./articulosRoutes.js"; // ruta al router backend
 import authRouter from "./authRouter.js"; // ruta al router backend
@@ -19,35 +19,35 @@ import chatRoutes from "./chatRoutes.js";
 import clientesRoutes from "./clientesRoutes.js";
 import contactoRoutes from "./contactoRoutes.js";
 import facturasRoutes from "./facturasRoutes.js";
-// paymentsRoutes is imported after dotenv is configured (see below)
+// paymentsRoutes se importa después de configurar dotenv (ver abajo)
 import fs from 'fs'
 import Factura from '../modelos/Factura.js'
 import Stripe from 'stripe'
 
-// First load environment from default location, then try the project root .env
+// Primero cargar variables de entorno desde la ubicación por defecto, luego intentar el .env de la raíz del proyecto
 dotenv.config();
 try {
     const rootEnv = path.resolve(__dirname, '..', '..', '.env')
     dotenv.config({ path: rootEnv })
-    console.log('Loaded env from', rootEnv)
+    console.log('Variables de entorno cargadas desde', rootEnv)
 } catch (e) {
-    console.warn('Could not load root .env explicitly:', e)
+    console.warn('No se pudo cargar el .env de la raíz explícitamente:', e)
 }
-// Now dynamically import paymentsRoutes after environment variables are loaded
-// Use dynamic import so the module is evaluated after dotenv has injected process.env
+// Ahora importar dinámicamente paymentsRoutes después de que las variables de entorno estén cargadas
+// Usar import dinámico para que el módulo se evalúe después de que dotenv haya inyectado process.env
 let paymentsRoutes
 try {
     paymentsRoutes = (await import('./paymentsRoutes.js')).default
 } catch (e) {
-    console.error('Error importing paymentsRoutes:', e)
+    console.error('Error importando paymentsRoutes:', e)
     paymentsRoutes = null
 }
-console.log('paymentsRoutes loaded:', !!paymentsRoutes)
+console.log('paymentsRoutes cargado:', !!paymentsRoutes)
 try{
-    console.log('paymentsRoutes type:', typeof paymentsRoutes, 'has stack len:', paymentsRoutes && paymentsRoutes.stack && paymentsRoutes.stack.length)
-}catch(e){/* noop */}
+    console.log('paymentsRoutes tipo:', typeof paymentsRoutes, 'tiene stack len:', paymentsRoutes && paymentsRoutes.stack && paymentsRoutes.stack.length)
+}catch(e){/* ignorar */}
 const app = express();
-const PORT = process.env.PORT || 5000;  // Use PORT from environment or default to 5000
+const PORT = process.env.PORT || 5000;  // Usar PORT desde las variables de entorno o por defecto 5000
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
@@ -64,16 +64,16 @@ app.use(cors({
 
 app.use(express.json());
 
-// Direct payments endpoint in server.js as a fallback (ensures route exists)
+// Endpoint directo de pagos en server.js como respaldo (asegura que la ruta existe)
 const stripeKeyDirect = process.env.STRIPE_API_KEY
-if (!stripeKeyDirect) console.warn('STRIPE_API_KEY not set in environment (direct handler)')
+if (!stripeKeyDirect) console.warn('STRIPE_API_KEY no está configurada en las variables de entorno (handler directo)')
 const stripeDirect = stripeKeyDirect ? new Stripe(stripeKeyDirect) : null
 
 app.post('/api/payments/create-checkout-session', async (req, res) => {
-    if (!stripeDirect) return res.status(500).json({ error: 'Stripe not configured' })
+    if (!stripeDirect) return res.status(500).json({ error: 'Stripe no está configurado' })
     try{
         const { amount, description } = req.body
-        if (!amount || isNaN(Number(amount))) return res.status(400).json({ error: 'Invalid amount' })
+        if (!amount || isNaN(Number(amount))) return res.status(400).json({ error: 'Monto inválido' })
         const amountCents = Math.round(Number(amount) * 100)
         const YOUR_DOMAIN = process.env.FRONTEND_ORIGIN || 'http://localhost:5173'
         const session = await stripeDirect.checkout.sessions.create({
@@ -85,7 +85,7 @@ app.post('/api/payments/create-checkout-session', async (req, res) => {
         })
         return res.json({ url: session.url })
     }catch(e){
-        console.error('Direct create-checkout-session error', e)
+        console.error('Error directo en create-checkout-session', e)
         return res.status(500).json({ error: 'No se pudo crear la sesión de pago' })
     }
 })
@@ -102,17 +102,17 @@ app.use("/api/contacto", contactoRoutes);
 app.use("/api/facturas", facturasRoutes);
 app.use("/api/payments", paymentsRoutes);
 
-// Debug: list mounted routes (for troubleshooting why /api/payments might 404)
+// Debug: listar rutas montadas (para depurar por qué /api/payments podría dar 404)
 try{
     const routes = app._router && app._router.stack
         ? app._router.stack
             .filter(l => l && l.route && l.route.path)
             .map(l => l.route.path)
         : []
-    console.log('Mounted route paths:', routes)
-}catch(e){ console.warn('Could not list routes:', e) }
+    console.log('Rutas montadas:', routes)
+}catch(e){ console.warn('No se pudieron listar las rutas:', e) }
 
-// Temporary direct test endpoint to verify Express serves /api/payments/*
+// Endpoint temporal de prueba para verificar que Express sirve /api/payments/*
 app.get('/api/payments/hello', (req, res) => res.json({ ok: true, from: 'server direct' }))
 
 // Verificar variable
@@ -131,9 +131,9 @@ function maskMongoUri(uri){
     }
 }
 
-console.log('Mongo URI used:', maskMongoUri(mongoUri))
+console.log('URI de Mongo utilizada:', maskMongoUri(mongoUri))
 
-// sanitize URI: remove unsupported query params that cause MongoParseError (e.g. useNewUrlParser, useUnifiedTopology)
+// sanitizar URI: eliminar parámetros de consulta no soportados que causan MongoParseError (ej. useNewUrlParser, useUnifiedTopology)
 function sanitizeMongoUri(uri){
         try{
                 let out = uri.replace(/([?&])(useNewUrlParser|useUnifiedTopology|useNewUrlparser)=([^&]*)/gi, '')
@@ -145,15 +145,15 @@ function sanitizeMongoUri(uri){
 }
 
 const sanitizedUri = sanitizeMongoUri(mongoUri)
-if (sanitizedUri !== mongoUri) console.warn('Sanitized Mongo URI to remove unsupported options')
+if (sanitizedUri !== mongoUri) console.warn('Se ha sanitizado la URI de Mongo para eliminar opciones no soportadas')
 
 try{
-        // attempt connection — wrap in try/catch to handle synchronous parse errors from the driver
+        // intentar conexión — envolver en try/catch para manejar errores de parsing sincrónicos del driver
         mongoose.connect(sanitizedUri, {
                 serverSelectionTimeoutMS: 5000
         })
         .then(() => {
-                console.log(`Connected to MongoDB: ${sanitizedUri}`);
+                console.log(`Conectado a MongoDB: ${sanitizedUri}`);
                 // al conectar, intentar vaciar el fichero de facturas pendientes si existe
                 (async function flushPending(){
                     try{
@@ -162,41 +162,41 @@ try{
                         const raw = fs.readFileSync(pendingPath, 'utf8') || '[]'
                         const arr = JSON.parse(raw || '[]')
                         if (Array.isArray(arr) && arr.length > 0){
-                            console.log('Flushing', arr.length, 'pending facturas to MongoDB')
+                            console.log('Vaciando', arr.length, 'facturas pendientes a MongoDB')
                             await Factura.insertMany(arr)
                             fs.writeFileSync(pendingPath, '[]', 'utf8')
-                            console.log('Pending facturas flushed to MongoDB')
+                            console.log('Facturas pendientes vaciadas a MongoDB')
                         }
                     }catch(e){
-                        console.warn('Error flushing pending facturas:', e.message || e)
+                        console.warn('Error al vaciar facturas pendientes:', e.message || e)
                     }
                 })()
         })
         .catch((err) => {
-                console.error('Initial connect to MongoDB failed:', err.message || err);
+                console.error('Fallo en conexión inicial a MongoDB:', err.message || err);
                 console.error('Continuando sin DB. Intentaré reconectar en background cada 5s.');
         });
 }catch(e){
         // captura errores sincrónicos (p. ej. MongoParseError durante parseOptions)
-        console.error('Synchronous error while attempting to connect to MongoDB (continuando sin fallar):', e.message || e)
+        console.error('Error sincrónico al intentar conectar a MongoDB (continuando sin fallar):', e.message || e)
 }
 
-// Start the server regardless of initial DB state so routes that return 503 can work
+// Iniciar el servidor independientemente del estado inicial de la BD para que las rutas que devuelven 503 puedan funcionar
 app.listen(PORT, () => {
     console.log(`Server Express está corriendo en el puerto: ${PORT}`);
 });
 
 // Intento de reconexión periódica si no está conectado
 const tryReconnect = () => {
-    if (mongoose.connection.readyState === 1) return; // already connected
+    if (mongoose.connection.readyState === 1) return; // ya conectado
     console.log('Intentando reconectar a MongoDB...')
     mongoose.connect(mongoUri, {
         serverSelectionTimeoutMS: 5000
     }).then(() => {
-        console.log('Reconnected to MongoDB')
+        console.log('Reconectado a MongoDB')
     }).catch((err) => {
-        console.warn('Reconnect failed:', err.message || err)
-        // will try again by interval
+        console.warn('Fallo en reconexión:', err.message || err)
+        // reintentará por intervalo
     })
 }
 
@@ -210,12 +210,12 @@ mongoose.connection.on('connected', async () => {
         const raw = fs.readFileSync(pendingPath, 'utf8') || '[]'
         const arr = JSON.parse(raw || '[]')
         if (Array.isArray(arr) && arr.length > 0){
-            console.log('Detected DB reconnection — flushing', arr.length, 'pending facturas')
+            console.log('Detectada reconexión a BD — vaciando', arr.length, 'facturas pendientes')
             await Factura.insertMany(arr)
             fs.writeFileSync(pendingPath, '[]', 'utf8')
-            console.log('Flushed pending facturas after reconnection')
+            console.log('Facturas pendientes vaciadas tras reconexión')
         }
     }catch(e){
-        console.warn('Error flushing pending after connected event', e.message || e)
+        console.warn('Error al vaciar pendientes tras evento connected', e.message || e)
     }
 })

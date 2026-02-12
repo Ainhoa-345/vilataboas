@@ -76,12 +76,12 @@ const password = ref('')
 async function load() {
   loading.value = true
   try {
-    // intentar obtener cliente logueado via token (incluimos token en el helper)
+    // intentar obtener cliente logueado vía token (incluimos token en el helper)
     try {
       const res = await getClienteLogueado()
       model.value = { ...res }
     } catch (err) {
-      // fallback: intentar por dni en sessionStorage
+      // respaldo: intentar por dni en sessionStorage
       const dni = sessionStorage.getItem('dni')
       if (!dni) {
         console.error('No hay token ni dni en sessionStorage');

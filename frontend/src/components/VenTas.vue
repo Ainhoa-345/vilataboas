@@ -117,18 +117,18 @@ onMounted(async () => {
 });
 
 const urlImagen = (ruta) => {
-    // si no hay ruta, usar placeholder importado (resuelto por Vite)
+    // si no hay ruta, usar imagen placeholder importada (resuelto por Vite)
     if (!ruta) return placeholderImg;
     // si ya es URL absoluta
     if (ruta.startsWith('http://') || ruta.startsWith('https://')) return ruta;
     // si viene de json-server con prefijo /public/... (tus fotos en frontend/public),
-    // quitar el /public para que el dev server las sirva en la ruta raíz
+    // quitar el /public para que el servidor de desarrollo las sirva en la ruta raíz
     if (ruta.startsWith('/public/')) return ruta.replace(/^\/public/, '');
     // si es ruta del servidor como /uploads/..., resolver al backend Express
     if (ruta.startsWith('/uploads')) return `http://localhost:5000${ruta}`;
     // otras rutas relativas -> devolver tal cual (pueden ser servidas por json-server)
     if (ruta.startsWith('/')) return ruta;
-    // fallback
+    // respaldo
     return placeholderImg;
 };
 

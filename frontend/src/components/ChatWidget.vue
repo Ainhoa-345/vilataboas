@@ -165,7 +165,7 @@
   white-space: pre-wrap;   /* respetar saltos de línea y envolver */
 }
 
-/* Modern styles for the chat widget (purple theme) */
+/* Estilos modernos para el widget de chat (tema morado) */
 .modern-toggle {
   position: fixed;
   right: 22px;

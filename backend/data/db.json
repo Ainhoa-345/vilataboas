@@ -487,7 +487,7 @@
       "provincia": "Pontevedra",
       "municipio": "Barro",
       "fecha_alta": "2025-12-20",
-      "tipo_cliente": "",
+      "tipo_cliente": "particular",
       "historico": true,
       "lopd": true,
       "password": "$2b$10$zLegpZqYO02Fc8/EnbjCG.n9SRRsNDN.i3TKpuSFbsrn7TOkItXNq",
@@ -504,7 +504,7 @@
       "provincia": "Pontevedra",
       "municipio": "Baiona",
       "fecha_alta": "2025-12-20",
-      "tipo_cliente": "",
+      "tipo_cliente": "particular",
       "historico": false,
       "lopd": true,
       "password": "$2b$10$.fFuTcnr5QlZ54cvM/3of.oPv1pWp/dPV9S4ygF6zDLX6mxXvA33G",
@@ -521,7 +521,7 @@
       "provincia": "Pontevedra",
       "municipio": "Baiona",
       "fecha_alta": "2025-12-19",
-      "tipo_cliente": "",
+      "tipo_cliente": "particular",
       "historico": false,
       "lopd": true,
       "password": "$2b$10$VaLwIR8tDlcl2vOIkeVlHOak8wsfz8CqLyFcrKYYksmZ2pqjtLlMu",
@@ -538,7 +538,7 @@
       "provincia": "Pontevedra",
       "municipio": "Arbo",
       "fecha_alta": "2025-12-11",
-      "tipo_cliente": "",
+      "tipo_cliente": "particular",
       "historico": false,
       "lopd": true,
       "password": "$2a$10$VCrQBQ8Z0TdYbhqlkbCjD.6u2Xbl9RxAvH4HBLv7P6AlWmnJHQVIK",
@@ -559,7 +559,7 @@
       "lopd": true,
       "password": "$2a$10$isInp.0VibiAME8U2oOaEOat0IgW1sH/P65C7MTszegrukkXVrMLq",
       "tipo": "admin",
-      "tipo_cliente": ""
+      "tipo_cliente": "particular"
     },
     {
       "id": "6740",
@@ -575,7 +575,23 @@
       "fecha_alta": "2026-01-27",
       "lopd": true,
       "tipo": "user",
-      "tipo_cliente": ""
+      "tipo_cliente": "particular"
+    },
+    {
+      "id": "admin001",
+      "dni": "12345678A",
+      "password": "$2a$10$5C2sKMfxNfyJaJl2E2X.xuq28NjqEdr37iva1ukp9afbcgIziSOUC",
+      "nombre": "Admin",
+      "apellidos": "Sistema",
+      "email": "admin@concesionario.com",
+      "movil": "600000000",
+      "direccion": "Calle Principal 1",
+      "provincia": "Pontevedra",
+      "municipio": "Vigo",
+      "fecha_alta": "2026-02-12",
+      "lopd": true,
+      "tipo": "admin",
+      "tipo_cliente": "empresa"
     }
   ],
   "noticias": [
