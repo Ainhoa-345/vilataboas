@@ -13,7 +13,7 @@
                     class="card h-80 shadow-sm position-relative" 
                     :class="{ 
                         'agotado': estaAgotado(car),
-                        'reservado': estaReservado(car)
+                        'reservado': !estaAgotado(car) && estaReservado(car)
                     }"
                     @click="mostrarDetalles(car)" 
                     style="cursor: pointer;"
@@ -60,7 +60,35 @@
                     </div>
 
                     <div class="card-footer text-end bg-white d-flex justify-content-between align-items-center">
-                        <span class="badge bg-primary">{{ car.estado }}</span>
+                        <!-- ============================================== -->
+                        <!-- BADGE DE DISPONIBILIDAD                       -->
+                        <!-- ============================================== -->
+                        <!-- 
+                            Prioridad de estados:
+                            1. AGOTADO (rojo) - si no hay stock
+                            2. RESERVADO (azul) - si está reservado pero hay stock
+                            3. DISPONIBLE (verde) - si hay stock y no está reservado
+                        -->
+                        <span 
+                            v-if="estaAgotado(car)" 
+                            class="badge bg-danger"
+                        >
+                            <i class="bi bi-x-circle me-1"></i>agotado
+                        </span>
+                        <span 
+                            v-else-if="estaReservado(car)" 
+                            class="badge bg-info"
+                        >
+                            <i class="bi bi-bookmark-check me-1"></i>reservado
+                        </span>
+                        <span 
+                            v-else 
+                            class="badge bg-success"
+                        >
+                            <i class="bi bi-check-circle me-1"></i>disponible
+                        </span>
+                        <!-- ============================================== -->
+                        
                         <div>
                             <!-- ============================================== -->
                             <!-- BOTÓN RESERVAR COCHE                          -->
@@ -502,9 +530,9 @@ const confirmarReserva = async () => {
         };
         
         // Obtener el ID del vehículo
-        const vehiculoId = vehiculoAReservar.value._id?.$oid || 
-                          vehiculoAReservar.value._id || 
-                          vehiculoAReservar.value.id;
+        // IMPORTANTE: json-server usa el campo "id" simple, no el _id de MongoDB
+        const vehiculoId = vehiculoAReservar.value.id || 
+                          vehiculoAReservar.value._id;
         
         // Actualizar el vehículo con la reserva
         await updateArticulo(vehiculoId, {
@@ -555,7 +583,8 @@ const cancelarMiReserva = async (vehiculo) => {
     if (!result.isConfirmed) return;
     
     try {
-        const vehiculoId = vehiculo._id?.$oid || vehiculo._id || vehiculo.id;
+        // IMPORTANTE: json-server usa el campo "id" simple, no el _id de MongoDB
+        const vehiculoId = vehiculo.id || vehiculo._id;
         
         // Quitar la reserva del vehículo
         await updateArticulo(vehiculoId, {

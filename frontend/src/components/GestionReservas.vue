@@ -242,7 +242,8 @@ const cancelarReserva = async (vehiculo) => {
   if (!result.isConfirmed) return;
 
   try {
-    const vehiculoId = vehiculo._id?.$oid || vehiculo._id || vehiculo.id;
+    // IMPORTANTE: json-server usa el campo "id" simple, no el _id de MongoDB
+    const vehiculoId = vehiculo.id || vehiculo._id;
 
     // Quitar la reserva del vehículo
     await updateArticulo(vehiculoId, {

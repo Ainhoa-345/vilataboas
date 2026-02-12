@@ -887,10 +887,17 @@
         "email": "carlos.rodriguez@example.com"
       },
       "fecha_publicacion": "2025-10-28T00:00:00.000Z",
-      "estado": "disponible",
+      "estado": "reservado",
       "stock": 5,
       "__v": 0,
-      "id": "dec5"
+      "id": "dec5",
+      "reserva": {
+        "nombre": "Prueba",
+        "dni": "48271639K",
+        "telefono": "698138059",
+        "email": "ainhoa@gmail.com",
+        "fecha": "2026-02-12T08:39:27.010Z"
+      }
     },
     {
       "_id": {
