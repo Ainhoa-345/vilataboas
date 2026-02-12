@@ -235,6 +235,96 @@
       <h4 class="m-0">Listado Clientes</h4>
       <!-- El botón de imprimir se ha movido al formulario (a la izquierda de Guardar) -->
     </div>
+    
+    <!-- ============================================== -->
+    <!-- SISTEMA DE FILTRADO DE CLIENTES               -->
+    <!-- ============================================== -->
+    <!-- 
+      Este sistema permite filtrar la tabla de clientes por diferentes campos.
+      - El desplegable permite seleccionar el campo por el que filtrar
+      - El input de búsqueda filtra en tiempo real
+      - Si la tabla está filtrada, al imprimir se imprime solo lo filtrado
+      
+      CAMPOS DISPONIBLES PARA FILTRAR:
+      - Sin filtro (muestra todos)
+      - Apellidos
+      - Nombre
+      - DNI
+      - Email
+      - Móvil
+      - Municipio
+      - Provincia
+      
+      PARA AÑADIR UN NUEVO CAMPO DE FILTRO:
+      1. Añadir una nueva <option> en el <select> con el value igual al nombre del campo en el objeto cliente
+      2. El computed 'clientesFiltrados' ya maneja automáticamente cualquier campo
+    -->
+    <div class="card mb-3 shadow-sm">
+      <div class="card-body py-2">
+        <div class="row align-items-center g-2">
+          <!-- Selector de campo a filtrar -->
+          <div class="col-auto">
+            <label for="filtrarPor" class="form-label mb-0 fw-bold">
+              <i class="bi bi-funnel me-1"></i>Filtrar por:
+            </label>
+          </div>
+          <div class="col-auto">
+            <select 
+              id="filtrarPor" 
+              v-model="campoFiltro" 
+              class="form-select form-select-sm"
+              @change="textoFiltro = ''"
+            >
+              <!-- Sin filtro (opción por defecto) -->
+              <option value="">-- Sin filtro --</option>
+              <!-- Campos disponibles para filtrar -->
+              <option value="apellidos">Apellidos</option>
+              <option value="nombre">Nombre</option>
+              <option value="dni">DNI</option>
+              <option value="email">Email</option>
+              <option value="movil">Móvil</option>
+              <option value="municipio">Municipio</option>
+              <option value="provincia">Provincia</option>
+            </select>
+          </div>
+          
+          <!-- Input de búsqueda (solo visible si hay campo seleccionado) -->
+          <div v-if="campoFiltro" class="col-auto">
+            <input 
+              type="text" 
+              v-model="textoFiltro" 
+              class="form-control form-control-sm" 
+              :placeholder="'Buscar por ' + campoFiltro + '...'"
+              style="min-width: 200px;"
+            />
+          </div>
+          
+          <!-- Botón para limpiar filtro -->
+          <div v-if="campoFiltro || textoFiltro" class="col-auto">
+            <button 
+              type="button" 
+              class="btn btn-outline-secondary btn-sm"
+              @click="limpiarFiltro"
+              title="Limpiar filtro"
+            >
+              <i class="bi bi-x-circle me-1"></i>Limpiar
+            </button>
+          </div>
+          
+          <!-- Indicador de resultados filtrados -->
+          <div v-if="textoFiltro && campoFiltro" class="col-auto ms-auto">
+            <span class="badge bg-info">
+              <i class="bi bi-list-ul me-1"></i>
+              {{ clientesFiltrados.length }} de {{ clientes.length }} clientes
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- ============================================== -->
+    <!-- FIN SISTEMA DE FILTRADO                       -->
+    <!-- ============================================== -->
+    
     <table class="table table-bordered table-striped table-hover table-sm align-middle">
       <thead class="table-primary">
         <tr>
@@ -364,6 +454,19 @@ var numClientes = ref(0);
 var currentPage = ref(1);
 var clientesPerPage = ref(10);
 
+// ============================================== 
+// VARIABLES PARA EL SISTEMA DE FILTRADO
+// ============================================== 
+// campoFiltro: campo por el que se va a filtrar (vacío = sin filtro)
+// textoFiltro: texto de búsqueda introducido por el usuario
+// 
+// PARA AÑADIR UN NUEVO CAMPO:
+// Solo necesitas añadir una nueva <option> en el template
+// El sistema automáticamente filtrará por ese campo
+// ==============================================
+const campoFiltro = ref('');      // Campo seleccionado para filtrar (ej: 'apellidos', 'municipio')
+const textoFiltro = ref('');      // Texto de búsqueda introducido
+
 const isAdmin = ref(false);
 const admin = ref(false)
 
@@ -453,10 +556,64 @@ const nextPagina = () => {
   }
 };
 
+// ============================================== 
+// COMPUTED: CLIENTES FILTRADOS
+// ============================================== 
+// Este computed aplica el filtro seleccionado a la lista de clientes.
+// 
+// FUNCIONAMIENTO:
+// 1. Si no hay campo de filtro seleccionado, devuelve todos los clientes
+// 2. Si hay campo pero no texto, devuelve todos los clientes
+// 3. Si hay campo y texto, filtra por coincidencia parcial (case-insensitive)
+// 
+// IMPORTANTE: Este computed se usa tanto para la tabla como para imprimir,
+// así si la tabla está filtrada, se imprimirá filtrada.
+// ==============================================
+const clientesFiltrados = computed(() => {
+  // Si no hay filtro aplicado, devolver todos los clientes
+  if (!campoFiltro.value || !textoFiltro.value.trim()) {
+    return clientes.value;
+  }
+  
+  // Texto de búsqueda en minúsculas para comparación case-insensitive
+  const busqueda = textoFiltro.value.trim().toLowerCase();
+  
+  // Filtrar clientes que coincidan con la búsqueda en el campo seleccionado
+  return clientes.value.filter(cliente => {
+    // Obtener el valor del campo a filtrar
+    const valorCampo = cliente[campoFiltro.value];
+    
+    // Si el campo no existe o es null/undefined, no coincide
+    if (valorCampo === null || valorCampo === undefined) {
+      return false;
+    }
+    
+    // Convertir a string y comparar (case-insensitive)
+    return String(valorCampo).toLowerCase().includes(busqueda);
+  });
+});
+
+// ============================================== 
+// FUNCIÓN: LIMPIAR FILTRO
+// ============================================== 
+// Resetea tanto el campo como el texto de filtro
+// ==============================================
+const limpiarFiltro = () => {
+  campoFiltro.value = '';
+  textoFiltro.value = '';
+  currentPage.value = 1; // Volver a la primera página
+};
+
+// ============================================== 
+// COMPUTED: CLIENTES PAGINADOS (AHORA USA FILTRADOS)
+// ============================================== 
+// Ahora pagina sobre los clientes filtrados, no sobre todos
+// ==============================================
 const clientesPaginados = computed(() => {
   const start = (currentPage.value - 1) * clientesPerPage.value
   const end = start + clientesPerPage.value
-  return clientes.value.slice(start, end)
+  // IMPORTANTE: Usar clientesFiltrados en lugar de clientes
+  return clientesFiltrados.value.slice(start, end)
 })
 
 
@@ -493,8 +650,23 @@ watch(isAdmin, async (val) => {
   if (val) await cargarClientes();
 });
 
+// ============================================== 
+// WATCH: RESETEAR PÁGINA AL FILTRAR
+// ============================================== 
+// Cuando cambia el filtro, volver a la página 1
+// ==============================================
+watch([campoFiltro, textoFiltro], () => {
+  currentPage.value = 1;
+});
+
+// ============================================== 
+// COMPUTED: TOTAL DE PÁGINAS (USA FILTRADOS)
+// ============================================== 
+// Calcula las páginas basándose en los clientes filtrados
+// ==============================================
 const totalPages = computed(() => {
-  return Math.ceil(numClientes.value / clientesPerPage.value)
+  // Usar el número de clientes filtrados, no el total
+  return Math.ceil(clientesFiltrados.value.length / clientesPerPage.value)
 })
 
 
@@ -640,11 +812,24 @@ const guardarCliente = async () => {
   }
 };
 
-// Imprimir listado de clientes (solo admins)
+// ============================================== 
+// FUNCIÓN: IMPRIMIR LISTADO DE CLIENTES
+// ============================================== 
+// IMPORTANTE: Usa clientesFiltrados para que se imprima lo que se ve en pantalla.
+// Si la tabla está filtrada, se imprimirá el listado filtrado.
+// Si no hay filtro activo, se imprimen todos los clientes.
+// ==============================================
 const imprimirListado = () => {
   try {
-    const listado = Array.isArray(clientes.value) ? clientes.value : [];
+    // IMPORTANTE: Usar clientesFiltrados para imprimir lo que está visible en la tabla
+    const listado = Array.isArray(clientesFiltrados.value) ? clientesFiltrados.value : [];
     const incluirHistorico = mostrarHistorico.value ? ' (incluye históricos)' : '';
+    
+    // Información del filtro aplicado para mostrar en el título
+    let filtroAplicado = '';
+    if (campoFiltro.value && textoFiltro.value.trim()) {
+      filtroAplicado = ` - Filtrado por ${campoFiltro.value}: "${textoFiltro.value}"`;
+    }
 
     const escapeHtml = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
@@ -671,6 +856,8 @@ const imprimirListado = () => {
         th,td{border:1px solid #ddd;padding:6px;font-size:12px}
         th{background:#f5f5f5;text-align:left}
         h1{font-size:18px;margin:0}
+        .filtro-info{color:#666;font-size:14px;margin-top:4px}
+        .total-registros{color:#333;font-size:12px;margin-top:8px}
       </style>
     `;
 
@@ -685,6 +872,8 @@ const imprimirListado = () => {
           <img src="${logoEmpresa}" class="logo-print" alt="Logo empresa" />
 
           <h1>Listado de clientes${incluirHistorico}</h1>
+          ${filtroAplicado ? `<p class="filtro-info">${escapeHtml(filtroAplicado)}</p>` : ''}
+          <p class="total-registros">Total: ${listado.length} cliente(s)</p>
           <table>
             <thead>
               <tr>
